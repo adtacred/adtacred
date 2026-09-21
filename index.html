@@ -1,0 +1,2725 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>AdtaCred — Sistema</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ac-bg: #F5F4F0;
+    --ac-surface: #FFFFFF;
+    --ac-surface-alt: #F0EFE9;
+    --ac-border: #E1DFD5;
+    --ac-border-strong: #CFCCBE;
+    --ac-text: #1B231F;
+    --ac-text-soft: #55625A;
+    --ac-text-muted: #8B9189;
+    --ac-primary: #0E4C42;
+    --ac-primary-dark: #0A342E;
+    --ac-heading: #0A342E;
+    --ac-primary-tint: #E3EDE9;
+    --ac-gold: #A7752B;
+    --ac-gold-tint: #F3E8D6;
+    --ac-blue: #2A5C8A;
+    --ac-blue-tint: #E5EDF4;
+    --ac-red: #A23B32;
+    --ac-red-tint: #F4E4E1;
+    --ac-green: #2E7D53;
+    --ac-green-tint: #E3F0E7;
+    --ac-radius: 8px;
+    --ac-radius-lg: 14px;
+  }
+  .app[data-theme="dark"] {
+    --ac-bg: #12180F;
+    --ac-surface: #1B231C;
+    --ac-surface-alt: #212B22;
+    --ac-border: #2C362B;
+    --ac-border-strong: #3C4939;
+    --ac-text: #EBEEE6;
+    --ac-text-soft: #A9B3A3;
+    --ac-text-muted: #78826F;
+    --ac-primary: #3FA98B;
+    --ac-heading: #6FD9BA;
+    --ac-primary-tint: rgba(63,169,139,0.16);
+    --ac-gold: #D9A648;
+    --ac-gold-tint: rgba(217,166,72,0.15);
+    --ac-blue: #6AA3D9;
+    --ac-blue-tint: rgba(106,163,217,0.15);
+    --ac-red: #E0685C;
+    --ac-red-tint: rgba(224,104,92,0.15);
+    --ac-green: #5BBE8C;
+    --ac-green-tint: rgba(91,190,140,0.15);
+  }
+  * { box-sizing: border-box; }
+  .app { font-family: 'Inter', var(--font-sans), sans-serif; color: var(--ac-text); background: var(--ac-bg); border-radius: 16px; padding: 0; overflow: hidden; border: 1px solid var(--ac-border); text-transform: uppercase; }
+  .ac-shell { display: flex; min-height: 560px; }
+
+  .ac-sidebar { width: 208px; flex-shrink: 0; background: var(--ac-primary-dark); color: #EDEFEA; padding: 22px 14px; display: flex; flex-direction: column; }
+  .ac-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 20px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.12); }
+  .brand-mark { width: 34px; height: 34px; border-radius: 8px; background: var(--ac-gold); color: var(--ac-primary-dark); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; flex-shrink: 0; }
+  .brand-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; letter-spacing: 0.2px; color: #fff; line-height: 1.2; }
+  .brand-sub { font-size: 10.5px; color: rgba(237,239,234,0.55); margin-top: 2px; letter-spacing: 0.2px; }
+  .ac-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; overflow-y: auto; }
+  .tab { display: flex; align-items: center; gap: 10px; padding: 9px 10px; font-size: 12.5px; border: none; background: transparent; color: rgba(237,239,234,0.65); cursor: pointer; border-radius: var(--ac-radius); text-align: left; font-family: inherit; }
+  .tab i { font-size: 16px; width: 16px; text-align: center; }
+  .tab:hover { background: rgba(255,255,255,0.06); color: #fff; }
+  .tab.active { background: rgba(167,117,43,0.18); color: #fff; font-weight: 500; }
+  .ac-theme-toggle { display: flex; align-items: center; gap: 8px; padding: 9px 10px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.12); }
+  .ac-theme-toggle button { height: 26px; width: 26px; padding: 0; border-radius: 6px; border: 1px solid rgba(255,255,255,0.18); background: transparent; color: rgba(237,239,234,0.75); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+  .ac-theme-toggle button.active { background: var(--ac-gold); color: var(--ac-primary-dark); border-color: var(--ac-gold); }
+  .ac-sync { font-size: 10px; color: rgba(237,239,234,0.45); padding: 10px 6px 0; }
+
+  .ac-main { flex: 1; min-width: 0; padding: 22px 26px 28px; background: var(--ac-bg); }
+  .view { display: none; }
+  .view.active { display: block; }
+  .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .metric { background: var(--ac-surface); border: 1px solid var(--ac-border); border-radius: var(--ac-radius-lg); padding: 14px 16px; }
+  .metric-label { font-size: 11px; color: var(--ac-text-soft); margin: 0 0 8px; letter-spacing: 0.4px; }
+  .metric-value { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; margin: 0; color: var(--ac-heading); }
+  .metric-sub { font-size: 11px; color: var(--ac-text-muted); margin: 4px 0 0; }
+  .card { background: var(--ac-surface); border: 1px solid var(--ac-border); border-radius: var(--ac-radius-lg); padding: 16px 20px; margin-bottom: 1rem; }
+  .card-title { font-size: 13px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; color: var(--ac-heading); letter-spacing: 0.3px; }
+  .card-title i { font-size: 15px; color: var(--ac-gold); }
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 8px; flex-wrap: wrap; }
+  .section-head h2 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin: 0; color: var(--ac-heading); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--ac-text-soft); font-weight: 600; padding: 9px 10px; border-bottom: 1.5px solid var(--ac-border-strong); white-space: nowrap; font-size: 10px; letter-spacing: 0.3px; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--ac-heading); }
+  th.sortable .sort-arrow { font-size: 9px; margin-left: 3px; opacity: 0.7; }
+  td { padding: 10px 10px; border-bottom: 1px solid var(--ac-border); vertical-align: middle; color: var(--ac-text); }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--ac-surface-alt); }
+  .table-wrap { overflow-x: auto; background: var(--ac-surface); border: 1px solid var(--ac-border); border-radius: var(--ac-radius-lg); padding: 4px; }
+  .badge { display: inline-block; font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 600; white-space: nowrap; letter-spacing: 0.2px; }
+  .row-actions { display: flex; gap: 6px; }
+  .icon-btn { border: 1px solid var(--ac-border-strong); background: var(--ac-surface); border-radius: var(--ac-radius); height: 28px; padding: 0 10px; display: flex; align-items: center; gap: 5px; justify-content: center; cursor: pointer; color: var(--ac-text-soft); font-size: 11px; font-family: inherit; }
+  .icon-btn:hover { background: var(--ac-surface-alt); color: var(--ac-heading); }
+  .icon-btn.danger { color: var(--ac-red) !important; border-color: var(--ac-red) !important; background: var(--ac-red-tint) !important; }
+  .icon-btn.danger:hover { background: var(--ac-red) !important; color: #fff !important; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 10.5px; color: var(--ac-text-soft); font-weight: 500; }
+  .field-full { grid-column: 1 / -1; }
+  .field input[readonly] { background: var(--ac-surface-alt); color: var(--ac-text-soft); }
+  .modal-bg { position: static; margin: 1rem 0; display: none; }
+  .overlay-modal-bg { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; margin: 0 !important; background: rgba(0,0,0,0.45); z-index: 500; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  .overlay-modal-bg.open { display: flex !important; }
+  .overlay-modal-bg .modal { width: 100%; max-width: 760px; margin: 0; }
+  .modal-bg.open { display: block; }
+  .modal { background: var(--ac-surface); border-radius: var(--ac-radius-lg); padding: 20px 22px; border: 1px solid var(--ac-border); border-left: 3px solid var(--ac-gold); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.1rem; }
+  .empty { text-align: center; padding: 2rem 1rem; color: var(--ac-text-muted); font-size: 12px; }
+  .pill-danger-text { color: var(--ac-red); font-weight: 600; }
+  .pill-amber-text { color: var(--ac-gold); font-weight: 600; }
+  .muted { color: var(--ac-text-muted); }
+  .search-input { max-width: 260px; }
+  .funil-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; margin-top: 8px; background: var(--ac-surface-alt); }
+  .funil-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 11px; color: var(--ac-text-soft); }
+  .funil-legend span.dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+
+  .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; background: var(--ac-surface); border: 1px solid var(--ac-border); border-radius: var(--ac-radius-lg); padding: 12px 14px; margin-bottom: 1.25rem; }
+  .filters-bar .field { min-width: 130px; }
+  .funil-check-wrap { position: relative; }
+  .funil-check-btn { min-width: 170px; text-align: left; }
+  .funil-check-panel { display: none; position: absolute; top: 40px; left: 0; z-index: 30; background: var(--ac-surface); border: 1px solid var(--ac-border-strong); border-radius: var(--ac-radius); padding: 8px; min-width: 200px; box-shadow: 0 6px 18px rgba(0,0,0,0.12); }
+  .autocomplete-panel { display: none; position: absolute; top: 62px; left: 0; right: 0; z-index: 40; background: var(--ac-surface); border: 1px solid var(--ac-border-strong); border-radius: var(--ac-radius); max-height: 220px; overflow-y: auto; box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+  .autocomplete-panel.open { display: block; }
+  .autocomplete-item { padding: 8px 12px; font-size: 12px; cursor: pointer; text-transform: uppercase; border-bottom: 1px solid var(--ac-border); }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.active { background: var(--ac-surface-alt); }
+  .autocomplete-item .ac-sub { color: var(--ac-text-muted); font-size: 10px; }
+  .funil-check-panel.open { display: block; }
+  .funil-check-panel label { display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 2px; font-weight: 400; color: var(--ac-text); text-transform: uppercase; }
+
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 1rem; }
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-box { position: relative; min-height: 220px; }
+  .bars-v { display: flex; align-items: flex-end; gap: 10px; height: 190px; padding-top: 10px; }
+  .bars-v .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bars-v .bar-fill { width: 70%; border-radius: 4px 4px 0 0; min-height: 2px; }
+  .bars-v .bar-label { font-size: 9px; color: var(--ac-text-soft); margin-top: 6px; text-align: center; }
+  .bars-v .bar-value { font-size: 9px; color: var(--ac-heading); font-weight: 600; margin-bottom: 4px; }
+  .bars-h { display: flex; flex-direction: column; gap: 10px; padding: 4px 0; }
+  .bars-h .bar-row { display: grid; grid-template-columns: 150px 1fr 100px; align-items: center; gap: 8px; }
+  .bars-h .bar-row-label { font-size: 10px; color: var(--ac-text-soft); text-align: right; }
+  .bars-h .bar-track { background: var(--ac-surface-alt); border-radius: 4px; height: 14px; overflow: hidden; }
+  .bars-h .bar-track-fill { height: 100%; border-radius: 4px; }
+  .bars-h .bar-row-value { font-size: 10px; color: var(--ac-heading); font-weight: 600; }
+  .pie-wrap { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .pie-circle { width: 150px; height: 150px; border-radius: 50%; flex-shrink: 0; }
+  .pie-legend { display: flex; flex-direction: column; gap: 6px; font-size: 10.5px; }
+  .pie-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+
+  .pagination { display: flex; gap: 6px; justify-content: center; padding: 12px 0 4px; flex-wrap: wrap; }
+  .page-btn { border: 1px solid var(--ac-border-strong); background: var(--ac-surface); color: var(--ac-text-soft); width: 30px; height: 30px; border-radius: var(--ac-radius); cursor: pointer; font-size: 11px; }
+  .page-btn.active { background: var(--ac-primary); color: #fff; border-color: var(--ac-primary); }
+
+  .kanban-board { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
+  .kanban-col { min-width: 190px; max-width: 190px; background: var(--ac-surface); border: 1px solid var(--ac-border); border-radius: var(--ac-radius); display: flex; flex-direction: column; max-height: 650px; }
+  .kanban-col.drag-over { outline: 2px dashed var(--ac-gold); outline-offset: -2px; }
+  .kanban-col-head { padding: 5px 8px; border-radius: var(--ac-radius) var(--ac-radius) 0 0; font-size: 8px; font-weight: 600; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+  .kanban-col-total { padding: 6px 8px; background: var(--ac-surface-alt); border-bottom: 1px solid var(--ac-border); font-size: 11px; font-weight: 700; color: var(--ac-heading); text-align: center; }
+  .kanban-col-body { padding: 7px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .kanban-card { background: var(--ac-surface-alt); border: 1px solid var(--ac-border); border-radius: 8px; padding: 12px 13px; font-size: 12px; cursor: grab; }
+  .kanban-card.dragging { opacity: 0.4; }
+  .kanban-card .kc-name { font-weight: 600; margin-bottom: 5px; font-size: 12.5px; }
+  .kanban-card .kc-meta { color: var(--ac-text-soft); font-size: 11px; line-height: 1.8; }
+  .kanban-card select { height: 28px; font-size: 10.5px; margin-top: 7px; padding: 0 4px; }
+  .kc-soma-check { display: flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 400; margin-top: 7px; text-transform: uppercase; opacity: 0.85; }
+  .kc-soma-check input { width: auto !important; height: auto !important; }
+  .kanban-card .kc-remove { font-size: 10.5px; color: var(--ac-red); cursor: pointer; margin-top: 6px; display: inline-block; }
+  .etapa-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--ac-border); }
+  .etapa-swatch { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+  .banco-pill { display: inline-flex; align-items: center; gap: 6px; }
+  .banco-pill img { width: 18px; height: 18px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: #fff; }
+  .banco-logo-preview { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--ac-surface-alt); border: 1px solid var(--ac-border); }
+  .etapa-reorder { display: flex; flex-direction: column; gap: 1px; }
+  .etapa-reorder button { height: 15px; width: 18px; padding: 0; font-size: 8px; border: none; background: var(--ac-surface-alt); color: var(--ac-text-soft); cursor: pointer; border-radius: 3px; }
+  .etapa-reorder button:hover { background: var(--ac-border-strong); }
+
+  #public-form-wrap { display: none; padding: 30px; max-width: 640px; margin: 0 auto; }
+  @media (max-width: 640px) {
+    #public-form-wrap { padding: 16px 12px; }
+    #public-form-wrap .card { padding: 16px 14px; }
+    #public-form-wrap .form-grid { grid-template-columns: 1fr; }
+    #public-form-wrap input, #public-form-wrap select { font-size: 14px !important; height: 42px !important; }
+    #public-form-wrap .field label { font-size: 11.5px; }
+    #public-form-wrap .brand-name { font-size: 15px; }
+    #public-form-wrap .pf-steps-label { font-size: 8px; }
+    #public-form-wrap .pf-nav button { flex: 1; }
+  }
+  .ac-toast { position: fixed; bottom: 20px; right: 20px; background: var(--ac-primary-dark); color: #fff; padding: 12px 16px; border-radius: var(--ac-radius-lg); font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 999; display: flex; align-items: center; gap: 10px; max-width: 300px; border-left: 3px solid var(--ac-gold); cursor: pointer; }
+  .ac-toast i { font-size: 18px; color: var(--ac-gold); flex-shrink: 0; }
+  .ti-loader-2 { display: inline-block; animation: ac-spin 0.8s linear infinite; }
+  @keyframes ac-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .modal-compact { max-width: 320px; }
+  .modal-compact .form-grid { gap: 8px; }
+  .modal-compact input, .modal-compact select { height: 30px !important; font-size: 11px !important; }
+  .modal-compact hr { margin: 10px 0 !important; }
+  .modal-compact .modal-actions { margin-top: 12px !important; }
+  .modal-compact .card-title { font-size: 12px !important; margin-bottom: 8px !important; }
+  #public-form-wrap .card { text-align: left; }
+  .pf-progress-wrap { background: var(--ac-surface-alt); border-radius: 6px; height: 6px; overflow: hidden; margin: 10px 0 6px; }
+  .pf-progress-bar { height: 100%; background: var(--ac-gold); }
+  .pf-steps-label { display: flex; justify-content: space-between; font-size: 9px; color: var(--ac-text-muted); flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
+  .pf-steps-label span.current { color: var(--ac-heading); font-weight: 600; }
+  .pf-step { display: none; }
+  .pf-step.active { display: block; }
+  .pf-nav { display: flex; justify-content: space-between; margin-top: 18px; gap: 8px; }
+  .pf-bank-check { display: flex; align-items: center; gap: 6px; padding: 6px 0; font-size: 11px; font-weight: 400; }
+  .pf-bank-detail { display: none; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 8px 22px; }
+  .pf-bank-detail.show { display: grid; }
+
+  @media (max-width: 720px) {
+    .ac-shell { flex-direction: column; }
+    .ac-sidebar { width: 100%; flex-direction: row; align-items: center; padding: 12px 14px; }
+    .ac-brand { border-bottom: none; padding: 0; margin-bottom: 0; margin-right: 12px; }
+    .brand-sub { display: none; }
+    .ac-nav { flex-direction: row; flex-wrap: wrap; flex: 1; }
+    .tab span.tab-label { display: none; }
+    .ac-sync { display: none; }
+    .ac-main { padding: 16px; }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+<div class="ac-shell" id="ac-shell">
+  <aside class="ac-sidebar">
+    <div class="ac-brand">
+      <div class="brand-mark">AC</div>
+      <div>
+        <div class="brand-name">AdtaCred</div>
+        <div class="brand-sub">Correspondente banc&aacute;rio</div>
+      </div>
+    </div>
+    <nav class="ac-nav">
+      <button class="tab active" data-tab="dashboard"><i class="ti ti-chart-bar"></i><span class="tab-label">Dashboard</span></button>
+      <button class="tab" data-tab="propostas"><i class="ti ti-file-text"></i><span class="tab-label">Propostas</span></button>
+      <button class="tab" data-tab="crm"><i class="ti ti-layout-kanban"></i><span class="tab-label">CRM Kanban</span></button>
+      <button class="tab" data-tab="solicitacoes"><i class="ti ti-inbox"></i><span class="tab-label">Solicitações</span></button>
+      <button class="tab" data-tab="clientes"><i class="ti ti-users"></i><span class="tab-label">Clientes</span></button>
+      <button class="tab" data-tab="parceiros"><i class="ti ti-handshake"></i><span class="tab-label">Parceiros</span></button>
+      <button class="tab" data-tab="financeiro"><i class="ti ti-currency-dollar"></i><span class="tab-label">Financeiro</span></button>
+      <button class="tab" data-tab="bancos"><i class="ti ti-building-bank"></i><span class="tab-label">Bancos</span></button>
+      <button class="tab" data-tab="importar"><i class="ti ti-file-upload"></i><span class="tab-label">Importar planilha</span></button>
+    </nav>
+    <div class="ac-theme-toggle">
+      <button id="theme-light-btn" title="Tema claro" onclick="setTheme('light')"><i class="ti ti-sun"></i></button>
+      <button id="theme-dark-btn" title="Tema escuro" onclick="setTheme('dark')"><i class="ti ti-moon"></i></button>
+    </div>
+    <div class="ac-sync" id="sync-status"></div>
+  </aside>
+  <main class="ac-main">
+
+  <!-- DASHBOARD -->
+  <div class="view active" id="view-dashboard">
+    <div class="section-head">
+      <h2>Dashboard</h2>
+      <button onclick="openRelatorioParceiro()"><i class="ti ti-report" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Relatório de parceiro</button>
+    </div>
+    <div class="filters-bar" id="dash-filters"></div>
+    <div class="grid-metrics" id="dash-metrics"></div>
+    <p class="muted" style="font-size:10px; margin-top:-10px; margin-bottom:14px;">Valores não somam tentativas paralelas do mesmo cliente em bancos diferentes — apenas a que estiver marcada como "conta no volume" em cada proposta.</p>
+    <div class="charts-grid">
+      <div class="card"><p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por mês</p><div class="chart-box" id="chart-barra"></div></div>
+      <div class="card"><p class="card-title"><i class="ti ti-chart-pie"></i>Valor por banco</p><div class="chart-box" id="chart-pizza"></div></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por etapa do funil</p>
+      <div class="chart-box" id="chart-cluster"></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-chart-donut"></i>Funil de propostas</p>
+      <div class="funil-bar" id="funil-bar"></div>
+      <div class="funil-legend" id="funil-legend"></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-table"></i>Matriz &middot; comprador x valor de financiamento</p>
+      <div class="table-wrap"><table id="dash-matriz-table"></table></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-alert-triangle"></i>Follow-ups pendentes</p>
+      <div class="table-wrap"><table id="dash-followup-table"></table></div>
+    </div>
+  </div>
+
+  <!-- PROPOSTAS -->
+  <div class="view" id="view-propostas">
+    <div class="section-head">
+      <h2>Propostas</h2>
+      <div style="display:flex; gap:8px;">
+        <input class="search-input" id="prop-search" placeholder="Buscar cliente ou nº proposta" />
+        <button onclick="openRelatorioParceiro()"><i class="ti ti-report" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Relatório de parceiro</button>
+        <button onclick="openProposalForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Nova proposta</button>
+      </div>
+    </div>
+    <div class="filters-bar" id="prop-filters"></div>
+    <div class="modal-bg" id="proposal-modal-wrap"></div>
+    <div class="table-wrap"><table id="propostas-table"></table></div>
+    <div class="pagination" id="prop-pagination"></div>
+  </div>
+
+  <!-- CRM KANBAN -->
+  <div class="view" id="view-crm">
+    <div class="section-head">
+      <h2>CRM Kanban</h2>
+      <div style="display:flex; gap:8px;">
+        <button onclick="openEtapaManager()"><i class="ti ti-settings" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Gerenciar etapas</button>
+        <button onclick="openAddToKanban()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Adicionar proposta</button>
+      </div>
+    </div>
+    <div class="modal-bg" id="etapa-modal-wrap"></div>
+    <div class="modal-bg" id="kanban-add-modal-wrap"></div>
+    <div id="kanban-empty" class="empty" style="display:none;">Nenhuma etapa cadastrada ainda. Clique em "Gerenciar etapas" para criar até 10 etapas do seu processo jurídico.</div>
+    <div class="kanban-board" id="kanban-board"></div>
+  </div>
+
+  <!-- SOLICITAÇÕES -->
+  <div class="view" id="view-solicitacoes">
+    <div class="section-head">
+      <h2>Solicitações recebidas</h2>
+      <div style="display:flex; gap:8px;">
+        <input class="search-input" id="sol-search" placeholder="Buscar por nome, telefone ou corretor" />
+        <button onclick="copyFormLink()"><i class="ti ti-link" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Copiar link do formulário</button>
+      </div>
+    </div>
+    <p class="muted" style="font-size:11px; margin-top:-8px;">Envie o link para o cliente preencher; o preenchimento chega automaticamente aqui.</p>
+    <div class="filters-bar" id="sol-filters"></div>
+    <div class="modal-bg" id="solicitacao-view-modal-wrap"></div>
+    <div class="table-wrap"><table id="solicitacoes-table"></table></div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div class="view" id="view-clientes">
+    <div class="section-head">
+      <h2>Clientes</h2>
+      <div style="display:flex; gap:8px;">
+        <input class="search-input" id="cli-search" placeholder="Buscar por nome ou CPF" />
+        <button onclick="openClientForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Novo cliente</button>
+      </div>
+    </div>
+    <div class="modal-bg" id="client-modal-wrap"></div>
+    <div class="table-wrap"><table id="clientes-table"></table></div>
+  </div>
+
+  <!-- PARCEIROS -->
+  <div class="view" id="view-parceiros">
+    <div class="section-head">
+      <h2>Parceiros</h2>
+      <div style="display:flex; gap:8px;">
+        <input class="search-input" id="par-search" placeholder="Buscar por nome, tipo ou contato" />
+        <select id="par-filtro-status" style="width:auto; max-width:140px;"><option value="">Todos status</option><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select>
+        <button onclick="openPartnerForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Novo parceiro</button>
+      </div>
+    </div>
+    <div class="modal-bg" id="partner-modal-wrap"></div>
+    <div class="table-wrap"><table id="parceiros-table"></table></div>
+  </div>
+
+  <!-- FINANCEIRO -->
+  <div class="view" id="view-financeiro">
+    <div class="section-head">
+      <h2>Financeiro</h2>
+      <button onclick="goToTab('bancos')"><i class="ti ti-building-bank" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Gerenciar comissão por banco</button>
+    </div>
+    <div class="modal-bg" id="bancos-comissao-modal-wrap"></div>
+    <div class="filters-bar" id="fin-filters"></div>
+    <div class="grid-metrics" id="fin-metrics"></div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-trending-up"></i>Estimativa de faturamento &middot; propostas em produção</p>
+      <p class="muted" style="font-size:11px; margin-top:-4px;">Propostas com status funil "Produção" — ainda não emitidas, valor de comissão estimado.</p>
+      <div class="table-wrap"><table id="fin-estimativa-table"></table></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-report-money"></i>Propostas emitidas &middot; comissão a receber</p>
+      <div class="table-wrap"><table id="fin-table"></table></div>
+    </div>
+  </div>
+
+  <!-- BANCOS -->
+  <div class="view" id="view-bancos">
+    <div class="section-head">
+      <h2>Bancos</h2>
+      <button onclick="openBancoForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Novo banco</button>
+    </div>
+    <p class="muted" style="font-size:11px; margin-top:-8px;">Cadastre os bancos parceiros com logo e % de comissão — usados em Propostas, Kanban e Financeiro.</p>
+    <div class="modal-bg" id="banco-modal-wrap"></div>
+    <div class="table-wrap"><table id="bancos-table"></table></div>
+  </div>
+
+  <!-- IMPORTAR -->
+  <div class="view" id="view-importar">
+    <div class="section-head"><h2>Importar planilha</h2></div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-file-upload"></i>Selecionar arquivo CSV</p>
+      <p class="muted" style="font-size:11px; margin-top:-4px;">Funciona com o modelo da sua planilha de controle. Clientes e parceiros novos são criados automaticamente; propostas já importadas antes não são duplicadas.</p>
+      <input type="file" id="import-file" accept=".csv" style="max-width:340px; margin-top:10px;" />
+      <div id="import-summary" style="margin-top:14px;"></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-shield-lock"></i>Backup dos dados</p>
+      <p class="muted" style="font-size:11px; margin-top:-4px;" id="backup-explainer">Carregando status de armazenamento…</p>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button onclick="exportBackup()"><i class="ti ti-download" style="font-size:12px; margin-right:4px;"></i>Exportar backup</button>
+        <button onclick="document.getElementById('backup-file').click()"><i class="ti ti-upload" style="font-size:12px; margin-right:4px;"></i>Importar backup</button>
+        <input type="file" id="backup-file" accept=".json" style="display:none;" />
+      </div>
+      <div id="backup-summary" style="margin-top:12px;"></div>
+    </div>
+  </div>
+
+  </main>
+</div>
+
+<div class="modal-bg overlay-modal-bg" id="relatorio-parceiro-modal-wrap"></div>
+<div class="modal-bg overlay-modal-bg" id="recibo-config-modal-wrap"></div>
+
+<!-- FORMULÁRIO PÚBLICO -->
+<div id="public-form-wrap">
+  <div class="card">
+    <div class="ac-brand" style="border:none; padding:0 0 6px; margin-bottom:0;">
+      <div class="brand-mark">AC</div>
+      <div><div class="brand-name" style="color:var(--ac-heading);">AdtaCred</div><div class="brand-sub" style="color:var(--ac-text-muted);">Solicitação de crédito imobiliário</div></div>
+    </div>
+    <p class="muted" style="font-size:10px; margin:10px 0 0;">Declaro que as informações abaixo são fiéis e verdadeiras, permitindo seu uso na análise de crédito junto às instituições parceiras. Dados protegidos conforme a LGPD.</p>
+    <div class="pf-progress-wrap"><div class="pf-progress-bar" id="pf-progress" style="width:16.6%;"></div></div>
+    <div class="pf-steps-label" id="pf-steps-label"></div>
+
+    <div id="public-form-body">
+      <!-- STEP 1: SIMULAÇÃO -->
+      <div class="pf-step active" data-step="1">
+        <p class="card-title"><i class="ti ti-calculator"></i>Simulação</p>
+        <div class="form-grid">
+          <div class="field"><label>Valor de compra e venda *</label><input id="pf-valorCompra" type="number" /></div>
+          <div class="field"><label>Prazo *</label>
+            <select id="pf-prazo"><option value="">Selecione</option><option>60 MESES</option><option>120 MESES</option><option>180 MESES</option><option>240 MESES</option><option>300 MESES</option><option>360 MESES</option><option>420 MESES</option></select>
+          </div>
+          <div class="field"><label>Incluir despesas?</label>
+            <select id="pf-incluirDespesas"><option value="NAO">NÃO</option><option value="SIM">SIM</option></select>
+          </div>
+          <div class="field"><label>Nome do corretor</label><input id="pf-corretor" placeholder="LIVRE" /></div>
+          <div class="field"><label>Entrada (recurso próprio)</label><input id="pf-entrada" type="number" /></div>
+          <div class="field"><label>Entrada FGTS</label><input id="pf-fgts" type="number" /></div>
+        </div>
+        <div id="pf-resumo-simulacao" class="card" style="background:var(--ac-surface-alt); margin-top:14px; padding:12px 14px;"></div>
+        <hr style="border:none; border-top:1px solid var(--ac-border); margin:14px 0;">
+        <p class="card-title" style="font-size:11px;"><i class="ti ti-building-bank"></i>Banco onde possui conta</p>
+        <div id="pf-bancos-list"></div>
+      </div>
+
+      <!-- STEP 2: DADOS PESSOAIS -->
+      <div class="pf-step" data-step="2">
+        <p class="card-title"><i class="ti ti-user"></i>Dados pessoais</p>
+        <div class="form-grid">
+          <div class="field field-full"><label>Nome completo *</label><input id="pf-nome" /></div>
+          <div class="field"><label>CPF *</label><input id="pf-cpf" /></div>
+          <div class="field"><label>RG *</label><input id="pf-rg" /></div>
+          <div class="field"><label>Data de nascimento *</label><input id="pf-nascimento" type="date" /></div>
+          <div class="field"><label>Estado civil *</label>
+            <select id="pf-estadoCivil" onchange="pfOnEstadoCivilChange()"><option value="">Selecione</option><option>SOLTEIRO(A)</option><option>CASADO(A)</option><option>DIVORCIADO(A)</option><option>VIÚVO(A)</option><option>UNIÃO ESTÁVEL</option></select>
+          </div>
+          <div class="field"><label>Telefone *</label><input id="pf-telefone" /></div>
+          <div class="field field-full"><label>E-mail *</label><input id="pf-email" type="email" /></div>
+          <div class="field field-full"><label>Nome da mãe *</label><input id="pf-nomeMae" /></div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--ac-border); margin:14px 0;">
+        <p class="card-title" style="font-size:11px;"><i class="ti ti-map-pin"></i>Endereço completo</p>
+        <div class="form-grid">
+          <div class="field"><label>UF *</label>
+            <select id="pf-end-uf">
+              <option value="">Selecione</option>
+              <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option>
+            </select>
+          </div>
+          <div class="field"><label>CEP *</label><input id="pf-end-cep" placeholder="00000-000" onblur="pfBuscarCep()" /></div>
+          <div class="field field-full"><label>Rua / Avenida *</label><input id="pf-end-rua" /></div>
+          <div class="field"><label>Número *</label><input id="pf-end-numero" /></div>
+          <div class="field"><label>Complemento</label><input id="pf-end-complemento" /></div>
+          <div class="field"><label>Bairro *</label><input id="pf-end-bairro" /></div>
+          <div class="field"><label>Cidade *</label><input id="pf-end-cidade" /></div>
+        </div>
+        <p id="pf-cep-status" class="muted" style="font-size:10px; margin-top:4px;"></p>
+      </div>
+
+      <!-- STEP 3: TRABALHO -->
+      <div class="pf-step" data-step="3">
+        <p class="card-title"><i class="ti ti-briefcase"></i>Trabalho</p>
+        <div class="form-grid">
+          <div class="field field-full"><label>Empresa onde trabalha *</label><input id="pf-empresa" /></div>
+          <div class="field"><label>Cargo *</label><input id="pf-cargo" /></div>
+          <div class="field"><label>Tempo de empresa *</label><input id="pf-tempoEmpresa" /></div>
+          <div class="field"><label>Data de contratação *</label><input id="pf-dataContratacao" type="date" /></div>
+          <div class="field"><label>Tipo de contratação *</label>
+            <select id="pf-tipoContratacao" onchange="pfToggleCnpj('pf-tipoContratacao','pf-cnpj-field')">
+              <option value="">Selecione</option><option>CLT</option><option>AUTÔNOMO</option><option>SÓCIO PROPRIETÁRIO</option><option>PROFISSIONAL LIBERAL</option>
+            </select>
+          </div>
+          <div class="field" id="pf-cnpj-field" style="display:none;"><label>CNPJ *</label><input id="pf-cnpj" /></div>
+          <div class="field"><label>Renda mensal (R$) *</label><input id="pf-renda" type="number" /></div>
+        </div>
+      </div>
+
+      <!-- STEP 4: CÔNJUGE -->
+      <div class="pf-step" data-step="4">
+        <p class="card-title"><i class="ti ti-heart"></i>Cônjuge</p>
+        <div id="pf-conjuge-naoaplica" class="muted" style="font-size:11px;">Etapa não aplicável — estado civil informado não é casado(a)/união estável.</div>
+        <div id="pf-conjuge-area" style="display:none;">
+          <p class="muted" style="font-size:10.5px; margin:0 0 10px;">Como você informou estado civil casado(a)/união estável, os dados abaixo do cônjuge são obrigatórios.</p>
+          <div class="form-grid">
+            <div class="field field-full"><label>Nome completo do cônjuge *</label><input id="pf-conjugeNome" /></div>
+            <div class="field"><label>CPF do cônjuge *</label><input id="pf-conjugeCpf" /></div>
+            <div class="field"><label>RG do cônjuge *</label><input id="pf-conjugeRg" /></div>
+            <div class="field"><label>Data de nascimento *</label><input id="pf-conjugeNascimento" type="date" /></div>
+            <div class="field"><label>Telefone do cônjuge *</label><input id="pf-conjugeTelefone" /></div>
+            <div class="field field-full"><label>E-mail do cônjuge *</label><input id="pf-conjugeEmail" type="email" /></div>
+            <div class="field field-full"><label>Nome da mãe do cônjuge *</label><input id="pf-conjugeNomeMae" /></div>
+          </div>
+          <div class="field" style="max-width:280px; margin-top:14px;">
+            <label>Cônjuge irá compor renda?</label>
+            <select id="pf-possuiConjuge" onchange="document.getElementById('pf-conjuge-renda-fields').classList.toggle('show', this.value==='SIM')">
+              <option value="NAO">NÃO</option><option value="SIM">SIM</option>
+            </select>
+          </div>
+          <div class="pf-bank-detail" id="pf-conjuge-renda-fields" style="margin-left:0; margin-top:10px;">
+            <div style="grid-column:1/-1;">
+              <hr style="border:none; border-top:1px solid var(--ac-border); margin:0 0 12px;">
+              <p class="card-title" style="font-size:11px;"><i class="ti ti-briefcase"></i>Trabalho do cônjuge</p>
+            </div>
+            <div class="field field-full"><label>Empresa onde trabalha *</label><input id="pf-conjugeEmpresa" /></div>
+            <div class="field"><label>Cargo *</label><input id="pf-conjugeCargo" /></div>
+            <div class="field"><label>Tempo de empresa *</label><input id="pf-conjugeTempoEmpresa" /></div>
+            <div class="field"><label>Data de contratação *</label><input id="pf-conjugeDataContratacao" type="date" /></div>
+            <div class="field"><label>Tipo de contratação *</label>
+              <select id="pf-conjugeTipoContratacao" onchange="pfToggleCnpj('pf-conjugeTipoContratacao','pf-conjuge-cnpj-field')">
+                <option value="">Selecione</option><option>CLT</option><option>AUTÔNOMO</option><option>SÓCIO PROPRIETÁRIO</option><option>PROFISSIONAL LIBERAL</option>
+              </select>
+            </div>
+            <div class="field" id="pf-conjuge-cnpj-field" style="display:none;"><label>CNPJ *</label><input id="pf-conjugeCnpj" /></div>
+            <div class="field"><label>Renda mensal (R$) *</label><input id="pf-conjugeRenda" type="number" /></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5: IMÓVEL -->
+      <div class="pf-step" data-step="5">
+        <p class="card-title"><i class="ti ti-home"></i>Imóvel</p>
+        <div class="form-grid">
+          <div class="field field-full"><label>Cidade do imóvel *</label><input id="pf-cidade" /></div>
+          <div class="field"><label>Tipo *</label><select id="pf-tipoImovel"><option value="">Selecione</option><option>NOVO</option><option>USADO</option><option>NA PLANTA</option></select></div>
+          <div class="field"><label>Finalidade *</label><select id="pf-finalidade"><option value="">Selecione</option><option>MORADIA</option><option>INVESTIMENTO</option></select></div>
+          <div class="field field-full"><label>Observação</label><input id="pf-observacao" /></div>
+        </div>
+      </div>
+
+      <!-- STEP 6: CONSENTIMENTO -->
+      <div class="pf-step" data-step="6">
+        <p class="card-title"><i class="ti ti-shield-check"></i>Consentimento</p>
+        <label style="display:flex; gap:8px; align-items:flex-start; font-size:11px; font-weight:400;">
+          <input type="checkbox" id="pf-consentimento" style="width:auto; height:auto; margin-top:2px;" />
+          <span>Autorizo o uso dos meus dados para análise de crédito junto às instituições financeiras parceiras, conforme a LGPD.</span>
+        </label>
+      </div>
+
+      <p id="pf-error" style="font-size:11px; color:var(--ac-red); display:none; margin-top:12px;"></p>
+      <div class="pf-nav">
+        <button id="pf-btn-back" onclick="pfPrevStep()" style="background:transparent; color:var(--ac-text-soft); border-color:var(--ac-border-strong); visibility:hidden;">Voltar</button>
+        <button id="pf-btn-next" onclick="pfNextStep()">Avançar</button>
+      </div>
+    </div>
+    <div id="public-form-thanks" style="display:none; text-align:center; padding:20px 0;">
+      <i class="ti ti-circle-check" style="font-size:40px; color:var(--ac-green);"></i>
+      <p style="font-family:'Fraunces',serif; font-size:16px; color:var(--ac-heading); margin:12px 0 4px;">Solicitação enviada!</p>
+      <p class="muted" style="font-size:12px;">Em breve nossa equipe entrará em contato.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+(function () {
+  // ================= CONFIGURAÇÃO DO BACKEND GOOGLE SHEETS =================
+  // Cole aqui a URL do seu Google Apps Script (termina em /exec) depois de implantado.
+  // Enquanto estiver vazio, o sistema usa armazenamento local (IndexedDB) neste navegador.
+  const REMOTE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2sRWhPSeWf79uEZ6wGGeLq7pMNkkxRGFWiDr66fn1ZcZNmoQidZDAI5NEvoQ4wgDNYA/exec';
+
+  // ================= BANCO DE DADOS (Google Sheets se configurado, senão local no navegador) =================
+  const localdb = (function () {
+    let dbPromise = null;
+    function openDB() {
+      if (dbPromise) return dbPromise;
+      dbPromise = new Promise((resolve, reject) => {
+        if (!window.indexedDB) { reject(new Error('IndexedDB indisponível neste navegador')); return; }
+        const req = indexedDB.open('adtacred-local-db', 1);
+        req.onupgradeneeded = (e) => { e.target.result.createObjectStore('kv'); };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      return dbPromise;
+    }
+    async function localGet(key) {
+      try {
+        const db = await openDB();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction('kv', 'readonly');
+          const r = tx.objectStore('kv').get(key);
+          r.onsuccess = () => resolve(r.result !== undefined ? { key, value: r.result } : null);
+          r.onerror = () => reject(r.error);
+        });
+      } catch (e) {
+        const v = localStorage.getItem('adtacred-local:' + key);
+        return v !== null ? { key, value: v } : null;
+      }
+    }
+    async function localSet(key, value) {
+      try {
+        const db = await openDB();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction('kv', 'readwrite');
+          tx.objectStore('kv').put(value, key);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+        return { key, value };
+      } catch (e) {
+        try { localStorage.setItem('adtacred-local:' + key, value); return { key, value }; }
+        catch (e2) { return null; }
+      }
+    }
+    const CHUNK_SIZE = 40000;
+    async function rawPost(payload) {
+      await fetch(REMOTE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
+    }
+    async function remoteGetRaw(key) {
+      const res = await fetch(REMOTE_SCRIPT_URL + '?key=' + encodeURIComponent(key), { redirect: 'follow' });
+      if (!res.ok) throw new Error('Falha ao consultar planilha (' + res.status + ')');
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch (e) { throw new Error('Resposta inesperada da planilha'); }
+      return data.value !== null && data.value !== undefined ? data.value : null;
+    }
+    async function remoteGet(key) {
+      // Dados grandes ficam divididos em vários pedaços (células têm limite de tamanho no Sheets).
+      const metaRaw = await remoteGetRaw(key + ':meta');
+      if (metaRaw) {
+        const count = parseInt(metaRaw, 10) || 0;
+        if (!count) return { key, value: '' };
+        const res = await fetch(REMOTE_SCRIPT_URL + '?prefix=' + encodeURIComponent(key + ':chunk:'), { redirect: 'follow' });
+        if (!res.ok) throw new Error('Falha ao consultar planilha (' + res.status + ')');
+        const data = JSON.parse(await res.text());
+        const map = new Map((data.rows || []).map(r => [r.key, r.value]));
+        let full = '';
+        for (let i = 0; i < count; i++) full += (map.get(key + ':chunk:' + i) || '');
+        return { key, value: full };
+      }
+      // Compatível com dados antigos salvos sem divisão em pedaços
+      const legacy = await remoteGetRaw(key);
+      return legacy !== null ? { key, value: legacy } : null;
+    }
+    async function remoteSet(key, value) {
+      // 'no-cors' evita que o navegador rejeite a chamada por política de CORS do Apps Script —
+      // não conseguimos ler a resposta, mas o Google recebe e grava normalmente.
+      const chunks = [];
+      for (let i = 0; i < value.length; i += CHUNK_SIZE) chunks.push(value.slice(i, i + CHUNK_SIZE));
+      if (!chunks.length) chunks.push('');
+      const batch = chunks.map((c, i) => ({ key: key + ':chunk:' + i, value: c }));
+      batch.push({ key: key + ':meta', value: String(chunks.length) });
+      // limpa pedaços antigos que possam ter sobrado de uma gravação anterior maior
+      for (let extra = 0; extra < 3; extra++) batch.push({ key: key + ':chunk:' + (chunks.length + extra), value: '' });
+      await rawPost({ batch }); // uma única chamada pro Google, em vez de várias
+      return { key, value };
+    }
+    async function get(key) { return REMOTE_SCRIPT_URL ? remoteGet(key) : localGet(key); }
+    async function set(key, value) { return REMOTE_SCRIPT_URL ? remoteSet(key, value) : localSet(key, value); }
+    function reconstructFromMap(map, key) {
+      const meta = map.get(key + ':meta');
+      if (meta !== undefined) {
+        const count = parseInt(meta, 10) || 0;
+        let full = '';
+        for (let i = 0; i < count; i++) full += (map.get(key + ':chunk:' + i) || '');
+        return full;
+      }
+      return map.has(key) ? map.get(key) : null;
+    }
+    async function getMany(keys) {
+      if (!REMOTE_SCRIPT_URL) {
+        const out = {};
+        for (const k of keys) out[k] = await localGet(k);
+        return out;
+      }
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // não trava pra sempre — desiste em 12s e tenta o plano B
+        let res;
+        try {
+          res = await fetch(REMOTE_SCRIPT_URL + '?prefix=' + encodeURIComponent('adtacred:'), { redirect: 'follow', signal: controller.signal });
+        } finally { clearTimeout(timeoutId); }
+        if (!res.ok) throw new Error('Falha ao consultar planilha (' + res.status + ')');
+        const data = JSON.parse(await res.text());
+        const map = new Map((data.rows || []).map(r => [r.key, r.value]));
+        const out = {};
+        keys.forEach(key => {
+          const value = reconstructFromMap(map, key);
+          out[key] = value !== null ? { key, value } : null;
+        });
+        return out;
+      } catch (e) {
+        // se a busca única falhar ou demorar demais, busca cada chave em paralelo (mais lento, mas confiável)
+        const results = await Promise.all(keys.map(k => remoteGet(k).catch(() => null)));
+        const out = {};
+        keys.forEach((k, i) => { out[k] = results[i]; });
+        return out;
+      }
+    }
+    async function remoteAppend(key, item) {
+      // gravação com trava do lado do Google — evita perder um item se duas pessoas
+      // enviarem o formulário quase ao mesmo tempo. 'no-cors' porque o navegador do
+      // cliente às vezes bloqueia a leitura da resposta mesmo quando o envio funciona.
+      await fetch(REMOTE_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'append', key, item }),
+      });
+    }
+    async function append(key, item) {
+      if (REMOTE_SCRIPT_URL) { await remoteAppend(key, item); return; }
+      const current = await localGet(key);
+      const list = current && current.value ? JSON.parse(current.value) : [];
+      list.push(item);
+      await localSet(key, JSON.stringify(list));
+    }
+    return { get, set, getMany, append, usingRemote: !!REMOTE_SCRIPT_URL };
+  })();
+
+  const FUNIL_STAGES = ['ANÁLISE DE CRÉDITO', 'APROVADO', 'PRODUÇÃO', 'EFETIVADO', 'FINALIZADO', 'REPROVADO'];
+  const FUNIL_STYLES = {
+    'ANÁLISE DE CRÉDITO': { bg: '#FCEACB', fg: '#8A6116' },
+    'APROVADO': { bg: '#DCEEE2', fg: '#1F6B3F' },
+    'PRODUÇÃO': { bg: '#DCEBFA', fg: '#1D6FA8' },
+    'EFETIVADO': { bg: '#D9E1EE', fg: '#1B3A63' },
+    'FINALIZADO': { bg: '#1E1E1E', fg: '#FFFFFF' },
+    'REPROVADO': { bg: '#F4DEDA', fg: '#A23B32' },
+  };
+  const STATUS_STYLES = { 'ATIVO': { bg: '#DCEBFA', fg: '#1D6FA8' }, 'INATIVO': { bg: '#F4DEDA', fg: '#A23B32' } };
+  const BANCOS = ['ITAÚ', 'SANTANDER', 'BRADESCO', 'INTER', 'CAIXA', 'OUTRO'];
+  const PLATAFORMAS = ['ITAU', 'CREDMORAR', 'MOST'];
+  const MESES = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+  const PAGE_SIZE = 15;
+
+  let clientes = [];
+  let parceiros = [];
+  let propostas = [];
+  let kanbanEtapas = [];
+  let solicitacoes = [];
+  let bancosComissao = [];
+  let bancos = [];
+
+  let propPage = 1;
+  let propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' };
+  let propSort = { col: 'dataCriacao', dir: -1 };
+  let parSort = { col: 'nome', dir: 1 };
+  let dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
+  let charts = {};
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function fmtMoney(n) {
+    n = Number(n) || 0;
+    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+  function fmtDate(d) {
+    if (!d) return '—';
+    const dt = new Date(d + 'T00:00:00');
+    if (isNaN(dt)) return d;
+    return dt.toLocaleDateString('pt-BR');
+  }
+  function daysSince(d) {
+    if (!d) return null;
+    const dt = new Date(d + 'T00:00:00');
+    if (isNaN(dt)) return null;
+    return Math.floor((Date.now() - dt.getTime()) / 86400000);
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ================= PUBLIC FORM MODE =================
+  const isPublicForm = new URLSearchParams(location.search).get('formulario') === '1';
+  const PF_STEP_NAMES = ['SIMULAÇÃO', 'DADOS PESSOAIS', 'TRABALHO', 'CÔNJUGE', 'IMÓVEL', 'CONSENTIMENTO'];
+  const PF_BANKS = ['ITAÚ', 'BRADESCO', 'SANTANDER', 'INTER'];
+  let pfStep = 1;
+  if (isPublicForm) {
+    $('#ac-shell').style.display = 'none';
+    $('#public-form-wrap').style.display = 'block';
+    $('#pf-bancos-list').innerHTML = PF_BANKS.map(b => `
+      <label class="pf-bank-check"><input type="checkbox" value="${b}" onchange="pfToggleBank(this)"> ${b}</label>
+      <div class="pf-bank-detail" id="pf-bank-${b}">
+        <div class="field"><label>Agência</label><input id="pf-ag-${b}" /></div>
+        <div class="field"><label>Conta</label><input id="pf-conta-${b}" /></div>
+      </div>`).join('');
+    ['pf-valorCompra', 'pf-entrada', 'pf-fgts'].forEach(id => $('#' + id).addEventListener('input', pfUpdateCalc));
+    $('#pf-incluirDespesas').addEventListener('change', pfUpdateCalc);
+    pfRenderStepLabel();
+    pfUpdateCalc();
+  }
+  window.pfToggleBank = function (el) { $('#pf-bank-' + el.value).classList.toggle('show', el.checked); };
+  function pfUpdateCalc() {
+    const compra = Number($('#pf-valorCompra').value) || 0;
+    const entrada = Number($('#pf-entrada').value) || 0;
+    const fgts = Number($('#pf-fgts').value) || 0;
+    const incluiDespesas = $('#pf-incluirDespesas').value === 'SIM';
+    const resumoEl = $('#pf-resumo-simulacao');
+    if (!compra) { resumoEl.innerHTML = '<p class="muted" style="font-size:10.5px; margin:0;">Informe o valor de compra e venda para ver a simulação.</p>'; return; }
+    const percFinanciado = incluiDespesas ? 0.75 : 0.80;
+    const percEntradaBanco = 0.20;
+    const valorFinanciado = compra * percFinanciado;
+    const valorDespesas = incluiDespesas ? compra * 0.05 : 0;
+    const valorEntradaBanco = compra * percEntradaBanco;
+    const valorParaVendedor = valorFinanciado;
+    resumoEl.innerHTML = `
+      <p style="font-size:11px; font-weight:600; color:var(--ac-heading); margin:0 0 8px;">Resumo da simulação</p>
+      <p style="font-size:10.5px; margin:2px 0;">Valor financiado pelo banco (${(percFinanciado * 100).toFixed(0)}%): <b>${fmtMoney(valorFinanciado)}</b></p>
+      <p style="font-size:10.5px; margin:2px 0;">Entrada de referência (20%): <b>${fmtMoney(valorEntradaBanco)}</b></p>
+      ${incluiDespesas ? `<p style="font-size:10.5px; margin:2px 0;">Despesas (5%, retornam ao comprador): <b>${fmtMoney(valorDespesas)}</b></p>` : ''}
+      <p style="font-size:10.5px; margin:2px 0;">Valor repassado ao vendedor: <b>${fmtMoney(valorParaVendedor)}</b></p>
+      <p class="muted" style="font-size:9.5px; margin:8px 0 0;">O banco financia até 80% do valor do imóvel${incluiDespesas ? ', sendo 5% desse valor destinado a cobrir despesas (voltam para você), restando 75% repassados ao vendedor' : ''}. Os 20% restantes são de entrada. Valores estimados — confirme com seu consultor.</p>
+    `;
+  }
+  function pfRenderStepLabel() {
+    $('#pf-steps-label').innerHTML = PF_STEP_NAMES.map((n, i) => `<span class="${i + 1 === pfStep ? 'current' : ''}">${n}</span>`).join('');
+    $('#pf-progress').style.width = (pfStep / 6 * 100) + '%';
+  }
+  window.pfToggleCnpj = function (selectId, fieldId) {
+    const val = $('#' + selectId).value;
+    $('#' + fieldId).style.display = val === 'SÓCIO PROPRIETÁRIO' ? 'flex' : 'none';
+  };
+  window.pfOnEstadoCivilChange = function () {
+    const casado = ['CASADO(A)', 'UNIÃO ESTÁVEL'].includes($('#pf-estadoCivil').value);
+    $('#pf-conjuge-area').style.display = casado ? 'block' : 'none';
+    $('#pf-conjuge-naoaplica').style.display = casado ? 'none' : 'block';
+  };
+  window.pfBuscarCep = async function () {
+    const cep = $('#pf-end-cep').value.replace(/\D/g, '');
+    const statusEl = $('#pf-cep-status');
+    if (cep.length !== 8) { statusEl.textContent = ''; return; }
+    statusEl.textContent = 'BUSCANDO ENDEREÇO…';
+    try {
+      const res = await fetch('https://viacep.com.br/ws/' + cep + '/json/');
+      const data = await res.json();
+      if (data.erro) { statusEl.textContent = 'CEP NÃO ENCONTRADO — PREENCHA MANUALMENTE.'; return; }
+      $('#pf-end-rua').value = data.logradouro || '';
+      $('#pf-end-bairro').value = data.bairro || '';
+      $('#pf-end-cidade').value = data.localidade || '';
+      $('#pf-end-uf').value = data.uf || '';
+      statusEl.textContent = 'ENDEREÇO ENCONTRADO.';
+    } catch (e) {
+      statusEl.textContent = 'NÃO FOI POSSÍVEL BUSCAR O CEP AGORA — PREENCHA MANUALMENTE.';
+    }
+  };
+  function pfRequiredOk(ids) {
+    return ids.every(id => { const el = $('#' + id); return el && String(el.value || '').trim() !== ''; });
+  }
+  function pfStepValidation(step) {
+    if (step === 1) {
+      const base = ['pf-valorCompra', 'pf-prazo'];
+      return pfRequiredOk(base);
+    }
+    if (step === 2) {
+      return pfRequiredOk(['pf-nome', 'pf-cpf', 'pf-rg', 'pf-nascimento', 'pf-estadoCivil', 'pf-telefone', 'pf-email', 'pf-nomeMae', 'pf-end-uf', 'pf-end-cep', 'pf-end-rua', 'pf-end-numero', 'pf-end-bairro', 'pf-end-cidade']);
+    }
+    if (step === 3) {
+      const base = ['pf-empresa', 'pf-cargo', 'pf-tempoEmpresa', 'pf-dataContratacao', 'pf-tipoContratacao', 'pf-renda'];
+      if ($('#pf-tipoContratacao').value === 'SÓCIO PROPRIETÁRIO') base.push('pf-cnpj');
+      return pfRequiredOk(base);
+    }
+    if (step === 4) {
+      const casado = ['CASADO(A)', 'UNIÃO ESTÁVEL'].includes($('#pf-estadoCivil').value);
+      if (!casado) return true;
+      const base = ['pf-conjugeNome', 'pf-conjugeCpf', 'pf-conjugeRg', 'pf-conjugeNascimento', 'pf-conjugeTelefone', 'pf-conjugeEmail', 'pf-conjugeNomeMae'];
+      if ($('#pf-possuiConjuge').value === 'SIM') {
+        base.push('pf-conjugeEmpresa', 'pf-conjugeCargo', 'pf-conjugeTempoEmpresa', 'pf-conjugeDataContratacao', 'pf-conjugeTipoContratacao', 'pf-conjugeRenda');
+        if ($('#pf-conjugeTipoContratacao').value === 'SÓCIO PROPRIETÁRIO') base.push('pf-conjugeCnpj');
+      }
+      return pfRequiredOk(base);
+    }
+    if (step === 5) {
+      return pfRequiredOk(['pf-cidade', 'pf-tipoImovel', 'pf-finalidade']);
+    }
+    return true;
+  }
+  window.pfNextStep = function () {
+    const errEl = $('#pf-error');
+    if (!pfStepValidation(pfStep)) { errEl.textContent = 'PREENCHA TODOS OS CAMPOS OBRIGATÓRIOS (*) PARA CONTINUAR.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    if (pfStep === 6) { submitPublicForm(); return; }
+    pfStep++;
+    pfGoStep();
+  };
+  window.pfPrevStep = function () { if (pfStep > 1) { pfStep--; pfGoStep(); } };
+  function pfGoStep() {
+    $$('.pf-step').forEach(s => s.classList.toggle('active', Number(s.dataset.step) === pfStep));
+    $('#pf-btn-back').style.visibility = pfStep === 1 ? 'hidden' : 'visible';
+    $('#pf-btn-next').innerHTML = pfStep === 6 ? '<i class="ti ti-send" style="margin-right:6px;"></i>Enviar solicitação' : 'Avançar';
+    pfRenderStepLabel();
+  }
+  window.submitPublicForm = async function () {
+    const nome = $('#pf-nome').value.trim();
+    const consent = $('#pf-consentimento').checked;
+    const errEl = $('#pf-error');
+    if (!nome) { errEl.textContent = 'INFORME SEU NOME COMPLETO.'; errEl.style.display = 'block'; return; }
+    if (!consent) { errEl.textContent = 'É NECESSÁRIO AUTORIZAR O USO DOS DADOS.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const btn = $('#pf-btn-next');
+    const backBtn = $('#pf-btn-back');
+    btn.disabled = true; btn.style.opacity = '0.6';
+    if (backBtn) backBtn.style.pointerEvents = 'none';
+    btn.innerHTML = '<i class="ti ti-loader-2" style="margin-right:6px;"></i>Enviando…';
+    const bancos = PF_BANKS.filter(b => $('#pf-bank-' + b).classList.contains('show')).map(b => ({ banco: b, agencia: $('#pf-ag-' + b).value, conta: $('#pf-conta-' + b).value }));
+    const entry = {
+      id: uid(), criadoEm: new Date().toISOString(), status: 'Nova',
+      nome, cpf: $('#pf-cpf').value.trim(), rg: $('#pf-rg').value.trim(), nascimento: $('#pf-nascimento').value,
+      estadoCivil: $('#pf-estadoCivil').value, telefone: $('#pf-telefone').value.trim(), email: $('#pf-email').value.trim(),
+      nomeMae: $('#pf-nomeMae').value.trim(),
+      endereco: { rua: $('#pf-end-rua').value.trim(), numero: $('#pf-end-numero').value.trim(), complemento: $('#pf-end-complemento').value.trim(), bairro: $('#pf-end-bairro').value.trim(), cidade: $('#pf-end-cidade').value.trim(), uf: $('#pf-end-uf').value.trim(), cep: $('#pf-end-cep').value.trim() },
+      empresa: $('#pf-empresa').value.trim(), cargo: $('#pf-cargo').value.trim(), tempoEmpresa: $('#pf-tempoEmpresa').value.trim(),
+      dataContratacao: $('#pf-dataContratacao').value, tipoContratacao: $('#pf-tipoContratacao').value, cnpj: $('#pf-cnpj').value.trim(),
+      renda: $('#pf-renda').value,
+      possuiConjuge: $('#pf-possuiConjuge').value === 'SIM',
+      conjugeNome: $('#pf-conjugeNome').value.trim(), conjugeCpf: $('#pf-conjugeCpf').value.trim(), conjugeRg: $('#pf-conjugeRg').value.trim(),
+      conjugeNascimento: $('#pf-conjugeNascimento').value, conjugeTelefone: $('#pf-conjugeTelefone').value.trim(), conjugeEmail: $('#pf-conjugeEmail').value.trim(),
+      conjugeNomeMae: $('#pf-conjugeNomeMae').value.trim(),
+      conjugeEmpresa: $('#pf-conjugeEmpresa').value.trim(), conjugeCargo: $('#pf-conjugeCargo').value.trim(), conjugeTempoEmpresa: $('#pf-conjugeTempoEmpresa').value.trim(),
+      conjugeDataContratacao: $('#pf-conjugeDataContratacao').value, conjugeTipoContratacao: $('#pf-conjugeTipoContratacao').value, conjugeCnpj: $('#pf-conjugeCnpj').value.trim(),
+      conjugeRenda: $('#pf-conjugeRenda').value,
+      valorCompra: $('#pf-valorCompra').value, entrada: $('#pf-entrada').value, fgts: $('#pf-fgts').value, prazo: $('#pf-prazo').value, bancos,
+      incluirDespesas: $('#pf-incluirDespesas').value, corretor: $('#pf-corretor').value.trim(),
+      valorImovel: $('#pf-valorCompra').value, cidade: $('#pf-cidade').value.trim(), tipoImovel: $('#pf-tipoImovel').value, finalidade: $('#pf-finalidade').value,
+      observacao: $('#pf-observacao').value.trim(),
+    };
+    try {
+      await localdb.append('adtacred:solicitacoes', entry);
+      $('#public-form-body').style.display = 'none';
+      $('#public-form-thanks').style.display = 'block';
+    } catch (e) {
+      errEl.textContent = 'NÃO FOI POSSÍVEL ENVIAR AGORA. TENTE NOVAMENTE.';
+      errEl.style.display = 'block';
+      btn.disabled = false; btn.style.opacity = '1';
+      if (backBtn) backBtn.style.pointerEvents = 'auto';
+      btn.innerHTML = '<i class="ti ti-send" style="margin-right:6px;"></i>Enviar solicitação';
+    }
+  };
+  window.copyFormLink = function () {
+    const link = location.origin + location.pathname + '?formulario=1';
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(link).then(() => alert('LINK COPIADO:\n' + link)).catch(() => prompt('COPIE O LINK ABAIXO:', link));
+    } else { prompt('COPIE O LINK ABAIXO:', link); }
+  };
+  if (isPublicForm) return; // don't run the admin app in public form mode
+
+  // ================= STORAGE =================
+  async function loadAll() {
+    setSync('CARREGANDO DADOS…');
+    const explainerEl = $('#backup-explainer');
+    if (explainerEl) {
+      explainerEl.innerHTML = localdb.usingRemote
+        ? 'Os dados ficam salvos na sua Planilha Google — funcionam em qualquer navegador/dispositivo, inclusive no formulário enviado ao cliente. Backups continuam recomendados como segurança extra.'
+        : 'Os dados ficam salvos neste navegador (local, sem nuvem, sem custo) — fechar e abrir o arquivo não apaga nada, mas não são compartilhados entre dispositivos/navegadores diferentes. Configure a Planilha Google para acesso compartilhado.';
+    }
+    try {
+      const keys = ['adtacred:clientes', 'adtacred:propostas', 'adtacred:parceiros', 'adtacred:kanban-etapas', 'adtacred:solicitacoes', 'adtacred:bancos-comissao', 'adtacred:bancos'];
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 25000));
+      const r = await Promise.race([localdb.getMany(keys), timeoutPromise]); // uma única chamada pro Google (com plano B); nunca trava pra sempre
+      clientes = r['adtacred:clientes'] && r['adtacred:clientes'].value ? JSON.parse(r['adtacred:clientes'].value) : [];
+      propostas = r['adtacred:propostas'] && r['adtacred:propostas'].value ? JSON.parse(r['adtacred:propostas'].value) : [];
+      parceiros = r['adtacred:parceiros'] && r['adtacred:parceiros'].value ? JSON.parse(r['adtacred:parceiros'].value) : [];
+      kanbanEtapas = r['adtacred:kanban-etapas'] && r['adtacred:kanban-etapas'].value ? JSON.parse(r['adtacred:kanban-etapas'].value) : [];
+      solicitacoes = r['adtacred:solicitacoes'] && r['adtacred:solicitacoes'].value ? JSON.parse(r['adtacred:solicitacoes'].value) : [];
+      bancosComissao = r['adtacred:bancos-comissao'] && r['adtacred:bancos-comissao'].value ? JSON.parse(r['adtacred:bancos-comissao'].value) : [];
+      bancos = r['adtacred:bancos'] && r['adtacred:bancos'].value ? JSON.parse(r['adtacred:bancos'].value) : [];
+      if (!bancos.length) {
+        // primeira vez: cria a lista de bancos a partir da lista fixa antiga + comissões já cadastradas
+        bancos = ['ITAÚ', 'SANTANDER', 'BRADESCO', 'INTER', 'CAIXA'].map(nome => {
+          const old = bancosComissao.find(x => x.banco === nome);
+          return { id: uid(), nome, percentualComissao: old ? old.percentual : '', logo: '' };
+        });
+        await saveBancos();
+      }
+      setSync(localdb.usingRemote ? 'DADOS NA PLANILHA GOOGLE' : 'DADOS SALVOS NESTE NAVEGADOR (LOCAL)');
+    } catch (e) {
+      console.error(e);
+      setSync('FALHA AO CARREGAR — VERIFIQUE SUA CONEXÃO E RECARREGUE A PÁGINA');
+    }
+    renderAll();
+  }
+  async function mergeById(key, localArray) {
+    if (!localdb.usingRemote) return localArray;
+    try {
+      const r = await localdb.get(key, true);
+      const remoteArray = r && r.value ? JSON.parse(r.value) : [];
+      const map = new Map(remoteArray.map(item => [item.id, item]));
+      localArray.forEach(item => map.set(item.id, item));
+      return Array.from(map.values());
+    } catch (e) { return localArray; }
+  }
+  async function saveClientes(deletedId) {
+    clientes = await mergeById('adtacred:clientes', clientes);
+    if (deletedId) clientes = clientes.filter(c => c.id !== deletedId);
+    await safeSet('adtacred:clientes', clientes);
+  }
+  async function saveParceiros(deletedId) {
+    parceiros = await mergeById('adtacred:parceiros', parceiros);
+    if (deletedId) parceiros = parceiros.filter(p => p.id !== deletedId);
+    await safeSet('adtacred:parceiros', parceiros);
+  }
+  async function savePropostas() { await safeSet('adtacred:propostas', propostas); }
+  async function saveEtapas() { await safeSet('adtacred:kanban-etapas', kanbanEtapas); }
+  async function saveSolicitacoes() { await safeSet('adtacred:solicitacoes', solicitacoes); }
+  async function saveBancosComissao() { await safeSet('adtacred:bancos-comissao', bancosComissao); }
+  async function saveBancos(deletedId) {
+    bancos = await mergeById('adtacred:bancos', bancos);
+    if (deletedId) bancos = bancos.filter(b => b.id !== deletedId);
+    await safeSet('adtacred:bancos', bancos);
+  }
+  async function safeSet(key, val) {
+    setSync('SALVANDO…');
+    try {
+      const r = await localdb.set(key, JSON.stringify(val), true);
+      if (!r) throw new Error('sem resposta');
+      setSync(localdb.usingRemote ? 'SALVO NA PLANILHA GOOGLE' : 'SALVO NESTE NAVEGADOR (LOCAL)');
+    } catch (e) { setSync('FALHA AO SALVAR — TENTE NOVAMENTE'); }
+  }
+  function setSync(msg) { const el = $('#sync-status'); if (el) el.textContent = msg; }
+
+  // ================= TABS =================
+  $$('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      $$('.tab').forEach(t => t.classList.remove('active'));
+      $$('.view').forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      $('#view-' + tab.dataset.tab).classList.add('active');
+      renderAll();
+    });
+  });
+
+  function clienteNome(id) { const c = clientes.find(x => x.id === id); return c ? c.nome : '—'; }
+  function parceiroNome(id) { const p = parceiros.find(x => x.id === id); return p ? p.nome : '—'; }
+  function badgeFunil(f) {
+    const st = FUNIL_STYLES[f] || { bg: '#EEE', fg: '#666' };
+    return `<span class="badge" style="background:${st.bg}; color:${st.fg};">${escapeHtml(f || '—')}</span>`;
+  }
+  function badgeStatus(s) {
+    const st = STATUS_STYLES[s] || { bg: '#EEE', fg: '#666' };
+    return `<span class="badge" style="background:${st.bg}; color:${st.fg};">${escapeHtml(s || '—')}</span>`;
+  }
+  function anoOf(p) { return p.dataCriacao ? p.dataCriacao.slice(0, 4) : ''; }
+  function mesOf(p) { return p.dataCriacao ? p.dataCriacao.slice(5, 7) : ''; }
+  function distinctYears() {
+    const ys = new Set(propostas.map(anoOf).filter(Boolean));
+    return Array.from(ys).sort().reverse();
+  }
+  function sortArrow(state, col) { return state.col === col ? `<span class="sort-arrow">${state.dir === 1 ? '▲' : '▼'}</span>` : ''; }
+  function genericSort(rows, state, getter) {
+    return rows.slice().sort((a, b) => {
+      const va = getter(a), vb = getter(b);
+      if (typeof va === 'number' || typeof vb === 'number') return (va - vb) * state.dir;
+      return String(va).localeCompare(String(vb)) * state.dir;
+    });
+  }
+
+  // ================= DASHBOARD =================
+  function filteredForDash() {
+    return propostas.filter(p => {
+      if (dashFilters.ano && anoOf(p) !== dashFilters.ano) return false;
+      if (dashFilters.mes && mesOf(p) !== dashFilters.mes) return false;
+      if (dashFilters.status && (p.status || '') !== dashFilters.status) return false;
+      if (dashFilters.funilSet.size && !dashFilters.funilSet.has(p.funil)) return false;
+      if (dashFilters.parceiroId && p.parceiroId !== dashFilters.parceiroId) return false;
+      return true;
+    });
+  }
+  function renderDashFilters() {
+    const years = distinctYears();
+    const wrap = $('#dash-filters');
+    wrap.innerHTML = `
+      <div class="field"><label>Ano</label>
+        <select id="df-ano"><option value="">Todos</option>${years.map(y => `<option value="${y}" ${dashFilters.ano === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Mês</label>
+        <select id="df-mes"><option value="">Todos</option>${MESES.map((m, i) => { const v = String(i + 1).padStart(2, '0'); return `<option value="${v}" ${dashFilters.mes === v ? 'selected' : ''}>${m}</option>`; }).join('')}</select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select id="df-status"><option value="">Todos</option><option value="ATIVO" ${dashFilters.status === 'ATIVO' ? 'selected' : ''}>Ativo</option><option value="INATIVO" ${dashFilters.status === 'INATIVO' ? 'selected' : ''}>Inativo</option></select>
+      </div>
+      <div class="field"><label>Parceiro / Imobiliária</label>
+        <select id="df-parceiro"><option value="">Todos</option>${parceiros.map(pa => `<option value="${pa.id}" ${dashFilters.parceiroId === pa.id ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}</select>
+      </div>
+      <div class="field funil-check-wrap">
+        <label>Status funil</label>
+        <button type="button" class="funil-check-btn" onclick="toggleFunilPanel('df')">${dashFilters.funilSet.size ? dashFilters.funilSet.size + ' selecionado(s)' : 'Todos'}</button>
+        <div class="funil-check-panel" id="df-funil-panel">
+          ${FUNIL_STAGES.map(f => `<label><input type="checkbox" value="${f}" ${dashFilters.funilSet.has(f) ? 'checked' : ''} onchange="onDashFunilCheck(this)"> ${f}</label>`).join('')}
+        </div>
+      </div>
+      <button onclick="clearDashFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
+    `;
+    $('#df-ano').addEventListener('change', e => { dashFilters.ano = e.target.value; renderDashboard(); });
+    $('#df-mes').addEventListener('change', e => { dashFilters.mes = e.target.value; renderDashboard(); });
+    $('#df-status').addEventListener('change', e => { dashFilters.status = e.target.value; renderDashboard(); });
+    $('#df-parceiro').addEventListener('change', e => { dashFilters.parceiroId = e.target.value; renderDashboard(); });
+  }
+  window.toggleFunilPanel = function (prefix) {
+    $('#' + prefix + '-funil-panel').classList.toggle('open');
+  };
+  window.onDashFunilCheck = function (el) {
+    if (el.checked) dashFilters.funilSet.add(el.value); else dashFilters.funilSet.delete(el.value);
+    renderDashboard();
+  };
+  window.clearDashFilters = function () {
+    dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
+    renderDashboard();
+  };
+  document.addEventListener('click', (e) => {
+    $$('.funil-check-panel.open').forEach(p => { if (!p.parentElement.contains(e.target)) p.classList.remove('open'); });
+  });
+
+  const PALETTE = ['#0E4C42', '#A7752B', '#2A5C8A', '#A23B32', '#2E7D53', '#6B7280', '#8A6116', '#1B3A63'];
+
+  function renderBarChart(elId, labels, values, color) {
+    const el = $('#' + elId);
+    if (!labels.length) { el.innerHTML = '<div class="empty">Sem dados para exibir.</div>'; return; }
+    const max = Math.max(...values, 1);
+    el.innerHTML = `<div class="bars-v">${labels.map((l, i) => `
+      <div class="bar-col">
+        <div class="bar-value">${fmtMoney(values[i]).replace('R$', '').trim()}</div>
+        <div class="bar-fill" style="height:${Math.max(2, (values[i] / max) * 100)}%; background:${color};" title="${l}: ${fmtMoney(values[i])}"></div>
+        <div class="bar-label">${l}</div>
+      </div>`).join('')}</div>`;
+  }
+  function renderHBarChart(elId, labels, values, colors) {
+    const el = $('#' + elId);
+    if (!labels.length) { el.innerHTML = '<div class="empty">Sem dados para exibir.</div>'; return; }
+    const max = Math.max(...values, 1);
+    el.innerHTML = `<div class="bars-h">${labels.map((l, i) => `
+      <div class="bar-row">
+        <div class="bar-row-label">${l}</div>
+        <div class="bar-track"><div class="bar-track-fill" style="width:${Math.max(1, (values[i] / max) * 100)}%; background:${colors[i]};"></div></div>
+        <div class="bar-row-value">${fmtMoney(values[i])}</div>
+      </div>`).join('')}</div>`;
+  }
+  function renderPieChart(elId, labels, values) {
+    const el = $('#' + elId);
+    const total = values.reduce((s, v) => s + v, 0);
+    if (!total) { el.innerHTML = '<div class="empty">Sem dados para exibir.</div>'; return; }
+    let acc = 0;
+    const stops = labels.map((l, i) => {
+      const start = (acc / total) * 360; acc += values[i];
+      const end = (acc / total) * 360;
+      return `${PALETTE[i % PALETTE.length]} ${start}deg ${end}deg`;
+    }).join(', ');
+    el.innerHTML = `<div class="pie-wrap">
+      <div class="pie-circle" style="background:conic-gradient(${stops});"></div>
+      <div class="pie-legend">${labels.map((l, i) => `<span><span class="dot" style="background:${PALETTE[i % PALETTE.length]};"></span>${bancoLogo(l) ? `<img src="${bancoLogo(l)}" style="width:14px; height:14px; border-radius:50%; object-fit:cover; vertical-align:-3px; margin-right:3px;" alt="" />` : ''}${l}: ${fmtMoney(values[i])}</span>`).join('')}</div>
+    </div>`;
+  }
+
+  function renderDashboard() {
+    renderDashFilters();
+    const rows = filteredForDash();
+    const volRows = rows.filter(p => p.contarNoVolume !== false); // exclui tentativas paralelas (mesmo cliente, outro banco)
+    const totalFinanciado = volRows.reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
+    const clientesUnicos = new Set(rows.map(p => p.clienteId)).size;
+    const ticketMedio = volRows.length ? totalFinanciado / volRows.length : 0;
+    const finalizadas = rows.filter(p => p.funil === 'FINALIZADO').length;
+
+    $('#dash-metrics').innerHTML = `
+      <div class="metric"><p class="metric-label">Valor financiamento</p><p class="metric-value">${fmtMoney(totalFinanciado)}</p></div>
+      <div class="metric"><p class="metric-label">Quantidade de clientes</p><p class="metric-value">${clientesUnicos}</p></div>
+      <div class="metric"><p class="metric-label">Ticket médio</p><p class="metric-value">${fmtMoney(ticketMedio)}</p></div>
+      <div class="metric"><p class="metric-label">Propostas finalizadas</p><p class="metric-value">${finalizadas}</p></div>
+    `;
+
+    // Bar chart: valor by month
+    const byMonth = {};
+    volRows.forEach(p => { const k = p.dataCriacao ? p.dataCriacao.slice(0, 7) : 'S/DATA'; byMonth[k] = (byMonth[k] || 0) + (Number(p.valorFinanciado) || 0); });
+    const monthKeys = Object.keys(byMonth).sort();
+    renderBarChart('chart-barra', monthKeys, monthKeys.map(k => byMonth[k]), '#0E4C42');
+
+    // Pie chart: by banco
+    const byBanco = {};
+    volRows.forEach(p => { const k = p.banco || 'N/D'; byBanco[k] = (byBanco[k] || 0) + (Number(p.valorFinanciado) || 0); });
+    renderPieChart('chart-pizza', Object.keys(byBanco), Object.values(byBanco));
+
+    // Clustered bar: funil x valor
+    const clusterValues = FUNIL_STAGES.map(f => volRows.filter(p => p.funil === f).reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0));
+    renderHBarChart('chart-cluster', FUNIL_STAGES, clusterValues, FUNIL_STAGES.map(f => FUNIL_STYLES[f].fg));
+
+    // funil bar (counts)
+    const total = rows.length || 1;
+    const counts = {};
+    FUNIL_STAGES.forEach(s => counts[s] = rows.filter(p => p.funil === s).length);
+    $('#funil-bar').innerHTML = FUNIL_STAGES.map(s => {
+      const pct = (counts[s] / total * 100).toFixed(1);
+      return `<div style="width:${pct}%; background:${FUNIL_STYLES[s].fg};" title="${s}: ${counts[s]}"></div>`;
+    }).join('');
+    $('#funil-legend').innerHTML = FUNIL_STAGES.map(s => `<span><span class="dot" style="background:${FUNIL_STYLES[s].fg}"></span>${s}: ${counts[s]}</span>`).join('');
+
+    // matriz comprador x valor
+    const byClient = {};
+    volRows.forEach(p => { const k = p.clienteId; if (!k) return; byClient[k] = (byClient[k] || 0) + (Number(p.valorFinanciado) || 0); });
+    const matrizRows = Object.entries(byClient).sort((a, b) => b[1] - a[1]).slice(0, 15);
+    const matrizTbl = $('#dash-matriz-table');
+    matrizTbl.innerHTML = matrizRows.length
+      ? `<thead><tr><th>Comprador</th><th>Valor de financiamento</th></tr></thead><tbody>${matrizRows.map(([cid, v]) => `<tr><td>${escapeHtml(clienteNome(cid))}</td><td>${fmtMoney(v)}</td></tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Sem dados para os filtros selecionados.</td></tr>`;
+
+    // follow-up
+    const pending = rows.filter(p => p.funil !== 'FINALIZADO' && p.funil !== 'REPROVADO' && p.dataFollowUp)
+      .map(p => ({ p, dias: daysSince(p.dataFollowUp) })).filter(x => x.dias !== null && x.dias >= 0)
+      .sort((a, b) => b.dias - a.dias).slice(0, 8);
+    const tbl = $('#dash-followup-table');
+    tbl.innerHTML = pending.length
+      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Status</th><th>Dias sem contato</th><th></th></tr></thead><tbody>${pending.map(({ p, dias }) => `
+          <tr><td>${escapeHtml(clienteNome(p.clienteId))}</td><td>${bancoPill(p.banco)}</td><td>${badgeFunil(p.funil)}</td>
+          <td class="${dias > 5 ? 'pill-danger-text' : dias > 2 ? 'pill-amber-text' : ''}">${dias} dia(s)</td>
+          <td><button class="icon-btn" onclick="goToProposal('${p.id}')"><i class="ti ti-arrow-right" style="font-size:12px;"></i></button></td></tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhum follow-up pendente.</td></tr>`;
+  }
+  window.goToTab = function (tabName) {
+    $$('.tab').forEach(t => t.classList.remove('active'));
+    $$('.view').forEach(v => v.classList.remove('active'));
+    $('.tab[data-tab="' + tabName + '"]').classList.add('active');
+    $('#view-' + tabName).classList.add('active');
+  };
+  window.goToProposal = function (id) {
+    $$('.tab').forEach(t => t.classList.remove('active'));
+    $$('.view').forEach(v => v.classList.remove('active'));
+    $('.tab[data-tab="propostas"]').classList.add('active');
+    $('#view-propostas').classList.add('active');
+    renderPropostas();
+    setTimeout(() => openProposalForm(id), 50);
+  };
+
+  // ================= PROPOSTAS =================
+  function renderPropFilters() {
+    const years = distinctYears();
+    const wrap = $('#prop-filters');
+    wrap.innerHTML = `
+      <div class="field"><label>Status</label>
+        <select id="pf-f-status"><option value="">Todos</option><option value="ATIVO" ${propFilters.status === 'ATIVO' ? 'selected' : ''}>Ativo</option><option value="INATIVO" ${propFilters.status === 'INATIVO' ? 'selected' : ''}>Inativo</option></select>
+      </div>
+      <div class="field funil-check-wrap">
+        <label>Status funil</label>
+        <button type="button" class="funil-check-btn" onclick="toggleFunilPanel('pf-f')">${propFilters.funilSet.size ? propFilters.funilSet.size + ' selecionado(s)' : 'Todos'}</button>
+        <div class="funil-check-panel" id="pf-f-funil-panel">
+          ${FUNIL_STAGES.map(f => `<label><input type="checkbox" value="${f}" ${propFilters.funilSet.has(f) ? 'checked' : ''} onchange="onPropFunilCheck(this)"> ${f}</label>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>Parceiro</label>
+        <select id="pf-f-parceiro"><option value="">Todos</option>${parceiros.map(pa => `<option value="${pa.id}" ${propFilters.parceiroId === pa.id ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Ano</label>
+        <select id="pf-f-ano"><option value="">Todos</option>${years.map(y => `<option value="${y}" ${propFilters.ano === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Mês</label>
+        <select id="pf-f-mes"><option value="">Todos</option>${MESES.map((m, i) => { const v = String(i + 1).padStart(2, '0'); return `<option value="${v}" ${propFilters.mes === v ? 'selected' : ''}>${m}</option>`; }).join('')}</select>
+      </div>
+      <button onclick="clearPropFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
+    `;
+    $('#pf-f-status').addEventListener('change', e => { propFilters.status = e.target.value; propPage = 1; renderPropostas(); });
+    $('#pf-f-parceiro').addEventListener('change', e => { propFilters.parceiroId = e.target.value; propPage = 1; renderPropostas(); });
+    $('#pf-f-ano').addEventListener('change', e => { propFilters.ano = e.target.value; propPage = 1; renderPropostas(); });
+    $('#pf-f-mes').addEventListener('change', e => { propFilters.mes = e.target.value; propPage = 1; renderPropostas(); });
+  }
+  window.onPropFunilCheck = function (el) {
+    if (el.checked) propFilters.funilSet.add(el.value); else propFilters.funilSet.delete(el.value);
+    propPage = 1;
+    renderPropostas();
+  };
+  window.clearPropFilters = function () { propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' }; propPage = 1; renderPropostas(); };
+
+  function renderPropostas() {
+    renderPropFilters();
+    const q = ($('#prop-search').value || '').toLowerCase();
+    let rows = propostas.filter(p => {
+      const nome = clienteNome(p.clienteId).toLowerCase();
+      if (!(nome.includes(q) || String(p.numeroProposta || '').toLowerCase().includes(q))) return false;
+      if (propFilters.status && (p.status || '') !== propFilters.status) return false;
+      if (propFilters.funilSet.size && !propFilters.funilSet.has(p.funil)) return false;
+      if (propFilters.ano && anoOf(p) !== propFilters.ano) return false;
+      if (propFilters.mes && mesOf(p) !== propFilters.mes) return false;
+      if (propFilters.parceiroId && p.parceiroId !== propFilters.parceiroId) return false;
+      return true;
+    });
+    const PROP_GETTERS = {
+      dataCriacao: p => p.dataCriacao || '',
+      cliente: p => clienteNome(p.clienteId).toLowerCase(),
+      parceiro: p => parceiroNome(p.parceiroId).toLowerCase(),
+      banco: p => p.banco || '',
+      plataforma: p => p.plataforma || '',
+      numeroProposta: p => p.numeroProposta || '',
+      status: p => p.status || '',
+      funil: p => p.funil || '',
+      valorFinanciado: p => Number(p.valorFinanciado) || 0,
+    };
+    rows = genericSort(rows, propSort, PROP_GETTERS[propSort.col] || PROP_GETTERS.dataCriacao);
+
+    // colapsa propostas da mesma operação (mesmo grupoId) numa única linha
+    const seenGroups = new Set();
+    rows = rows.filter(p => {
+      const gid = p.grupoId || p.id;
+      if (seenGroups.has(gid)) return false;
+      seenGroups.add(gid);
+      return true;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (propPage > totalPages) propPage = totalPages;
+    const pageRows = rows.slice((propPage - 1) * PAGE_SIZE, propPage * PAGE_SIZE);
+
+    const tbl = $('#propostas-table');
+    tbl.innerHTML = pageRows.length
+      ? `<thead><tr>
+          <th class="sortable" onclick="setPropSort('dataCriacao')">Data${sortArrow(propSort, 'dataCriacao')}</th>
+          <th class="sortable" onclick="setPropSort('cliente')">Cliente${sortArrow(propSort, 'cliente')}</th>
+          <th class="sortable" onclick="setPropSort('parceiro')">Parceiro${sortArrow(propSort, 'parceiro')}</th>
+          <th class="sortable" onclick="setPropSort('banco')">Banco${sortArrow(propSort, 'banco')}</th>
+          <th class="sortable" onclick="setPropSort('plataforma')">Plataforma${sortArrow(propSort, 'plataforma')}</th>
+          <th class="sortable" onclick="setPropSort('numeroProposta')">Nº proposta${sortArrow(propSort, 'numeroProposta')}</th>
+          <th class="sortable" onclick="setPropSort('status')">Status${sortArrow(propSort, 'status')}</th>
+          <th class="sortable" onclick="setPropSort('funil')">Status funil${sortArrow(propSort, 'funil')}</th>
+          <th class="sortable" onclick="setPropSort('valorFinanciado')">Valor financiado${sortArrow(propSort, 'valorFinanciado')}</th>
+          <th>Etapa Kanban</th>
+          <th></th></tr></thead>
+        <tbody>${pageRows.map(p => {
+          const membros = p.grupoId ? propostas.filter(x => x.grupoId === p.grupoId) : [p];
+          const principal = membros.find(x => x.contarNoVolume !== false) || membros[0];
+          const bancosUnicos = [...new Set(membros.map(m => m.banco).filter(Boolean))];
+          const bancoCell = membros.length > 1
+            ? `<span style="display:flex; align-items:center; gap:3px; flex-wrap:wrap;">${bancosUnicos.map(b => `<img src="${bancoLogo(b) || ''}" title="${escapeHtml(b)}" style="width:16px; height:16px; border-radius:50%; object-fit:cover; background:#fff; ${bancoLogo(b) ? '' : 'display:none;'}" />`).join('')}<span class="badge badge-blue" style="margin-left:2px;">${membros.length} BANCOS</span></span>`
+            : bancoPill(p.banco);
+          return `
+          <tr>
+            <td>${fmtDate(principal.dataCriacao)}</td>
+            <td>${escapeHtml(clienteNome(principal.clienteId))}</td>
+            <td>${escapeHtml(parceiroNome(principal.parceiroId))}</td>
+            <td>${bancoCell}</td>
+            <td>${escapeHtml(principal.plataforma || '—')}</td>
+            <td>${escapeHtml(principal.numeroProposta || '—')}</td>
+            <td>${badgeStatus(principal.status)}</td>
+            <td>${badgeFunil(principal.funil)}</td>
+            <td>${fmtMoney(principal.valorFinanciado)}</td>
+            <td>${principal.kanbanEtapaId ? kanbanEtapaBadge(principal.kanbanEtapaId) : '<span class="muted" style="font-size:10px;">Fora do kanban</span>'}</td>
+            <td class="row-actions">
+              <button class="icon-btn" onclick="openProposalForm('${principal.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+              <button class="icon-btn" onclick="copyProposal('${principal.id}')" title="Copiar proposta (ex: mesma proposta em outro banco)"><i class="ti ti-copy" style="font-size:12px;"></i>Copiar</button>
+              <button class="icon-btn danger" onclick="deleteProposal('${principal.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
+            </td>
+          </tr>`; }).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhuma proposta encontrada.</td></tr>`;
+
+    const pag = $('#prop-pagination');
+    if (totalPages <= 1) { pag.innerHTML = ''; }
+    else {
+      let btns = '';
+      for (let i = 1; i <= totalPages; i++) btns += `<button class="page-btn ${i === propPage ? 'active' : ''}" onclick="goPropPage(${i})">${i}</button>`;
+      pag.innerHTML = btns;
+    }
+  }
+  window.goPropPage = function (n) { propPage = n; renderPropostas(); };
+  window.setPropSort = function (col) {
+    if (propSort.col === col) propSort.dir *= -1; else { propSort.col = col; propSort.dir = 1; }
+    renderPropostas();
+  };
+  $('#prop-search').addEventListener('input', () => { propPage = 1; renderPropostas(); });
+
+  function renderGrupoPanel(currentId, grupoId) {
+    const panel = $('#f-grupo-panel');
+    if (!panel) return;
+    const clienteIdEl = $('#f-clienteId');
+    const clienteIdAtual = clienteIdEl ? clienteIdEl.value : '';
+    const siblings = grupoId ? propostas.filter(x => x.grupoId === grupoId) : [];
+    const tableHtml = siblings.length > 1 ? `
+        <div class="table-wrap" style="padding:2px; margin-bottom:10px;">
+          <table style="font-size:11px;">
+            <thead><tr><th>Banco</th><th>Parceiro</th><th>Valor financiado</th><th>Status</th><th>Status funil</th><th>Conta no volume</th><th></th></tr></thead>
+            <tbody>${siblings.map(s => `<tr ${s.id === currentId ? 'style="font-weight:600;"' : ''}>
+              <td>${bancoPill(s.banco)}${s.id === currentId ? ' <span class="muted" style="font-size:9px;">(esta)</span>' : ''}</td>
+              <td>${escapeHtml(parceiroNome(s.parceiroId))}</td>
+              <td>${fmtMoney(s.valorFinanciado)}</td>
+              <td>${badgeStatus(s.status || 'ATIVO')}</td>
+              <td>${badgeFunil(s.funil)}</td>
+              <td style="text-align:center;"><input type="checkbox" ${s.contarNoVolume !== false ? 'checked' : ''} onchange="toggleContarNoVolume('${s.id}', this.checked)" /></td>
+              <td>${s.id !== currentId ? `<button type="button" class="icon-btn" onclick="openProposalForm('${s.id}')" style="height:24px; font-size:10px;">Abrir</button>` : ''}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <button type="button" onclick="unlinkFromGroup('${currentId}')" style="margin-bottom:12px; height:30px; font-size:10.5px;"><i class="ti ti-unlink" style="font-size:11px; margin-right:4px;"></i>Desvincular esta proposta da operação</button>
+      ` : `<p class="muted" style="font-size:10.5px; margin-bottom:8px;">Nenhuma outra tentativa vinculada ainda.</p>`;
+
+    if (!clienteIdAtual) {
+      panel.innerHTML = tableHtml + `<p class="muted" style="font-size:10.5px;">Selecione o cliente da proposta antes de vincular outras tentativas.</p>`;
+      return;
+    }
+
+    const siblingIds = new Set(siblings.length ? siblings.map(s => s.id) : [currentId]);
+    const candidatos = propostas.filter(x => x.clienteId === clienteIdAtual && !siblingIds.has(x.id));
+
+    panel.innerHTML = `
+      ${tableHtml}
+      ${candidatos.length ? `
+        <label style="font-size:10px; color:var(--ac-text-soft); font-weight:500; display:block; margin-bottom:4px;">Outras propostas de ${escapeHtml(clienteNome(clienteIdAtual))} — marque as que são a mesma operação</label>
+        <div class="table-wrap" style="padding:2px;">
+          <table style="font-size:11px;">
+            <thead><tr><th style="width:26px;"><input type="checkbox" id="grp-select-all" onchange="$$('.grp-candidate').forEach(c=>c.checked=this.checked)" /></th><th>Banco</th><th>Parceiro</th><th>Nº proposta</th><th>Valor</th></tr></thead>
+            <tbody>${candidatos.map(c => `<tr>
+              <td><input type="checkbox" class="grp-candidate" value="${c.id}" /></td>
+              <td>${bancoPill(c.banco)}</td>
+              <td>${escapeHtml(parceiroNome(c.parceiroId))}</td>
+              <td>${escapeHtml(c.numeroProposta || '—')}</td>
+              <td>${fmtMoney(c.valorFinanciado)}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>
+        <div class="modal-actions" style="justify-content:flex-start; margin-top:8px;">
+          <button type="button" onclick="linkSelectedToGroup('${currentId}')"><i class="ti ti-link" style="font-size:11px; margin-right:4px;"></i>Vincular selecionadas</button>
+        </div>
+      ` : `<p class="muted" style="font-size:10.5px;">Nenhuma outra proposta deste cliente disponível para vincular.</p>`}
+    `;
+  }
+  window.linkSelectedToGroup = async function (currentId) {
+    const checked = $$('.grp-candidate:checked').map(el => el.value);
+    if (!checked.length) return;
+    const current = propostas.find(x => x.id === currentId);
+    if (!current) return;
+    const grupoId = current.grupoId || current.id;
+    current.grupoId = grupoId;
+    if (current.contarNoVolume === undefined) current.contarNoVolume = true;
+    checked.forEach(tid => {
+      const t = propostas.find(x => x.id === tid);
+      if (t) { t.grupoId = grupoId; t.contarNoVolume = false; }
+    });
+    await savePropostas();
+    renderGrupoPanel(currentId, grupoId);
+    renderAll();
+    showToast(`${checked.length} proposta(s) vinculada(s) como a mesma operação.`);
+  };
+  window.toggleContarNoVolume = async function (id, checked) {
+    const p = propostas.find(x => x.id === id);
+    if (p) p.contarNoVolume = checked;
+    await savePropostas();
+    renderGrupoPanel(id, p ? p.grupoId : null);
+    renderAll();
+  };
+  window.unlinkFromGroup = async function (id) {
+    const p = propostas.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm('DESVINCULAR ESTA PROPOSTA DA OPERAÇÃO? ELA PASSA A CONTAR SOZINHA NO VOLUME.')) return;
+    p.grupoId = '';
+    p.contarNoVolume = true;
+    await savePropostas();
+    renderGrupoPanel(id, '');
+    renderAll();
+  };
+  window.linkProposalToGroup = async function (currentId, targetId) {
+    const current = propostas.find(x => x.id === currentId);
+    const target = propostas.find(x => x.id === targetId);
+    if (!current || !target) return;
+    const grupoId = current.grupoId || target.grupoId || current.id; // mantém o grupo já existente, se houver
+    current.grupoId = grupoId;
+    target.grupoId = grupoId;
+    if (current.contarNoVolume === undefined) current.contarNoVolume = true;
+    target.contarNoVolume = false; // a recém-vinculada não soma por padrão
+    await savePropostas();
+    renderGrupoPanel(currentId, grupoId);
+    renderAll();
+    showToast('Propostas vinculadas como a mesma operação.');
+  };
+
+  window.deleteProposal = function (id) {
+    const p = propostas.find(x => x.id === id);
+    const emKanban = p && p.kanbanEtapaId;
+    const msg = emKanban ? 'ESTA PROPOSTA ESTÁ NO CRM KANBAN. TEM CERTEZA QUE DESEJA EXCLUÍ-LA? ESTA AÇÃO NÃO PODE SER DESFEITA.' : 'TEM CERTEZA QUE DESEJA EXCLUIR ESTA PROPOSTA? ESTA AÇÃO NÃO PODE SER DESFEITA.';
+    if (!confirm(msg)) return;
+    propostas = propostas.filter(p => p.id !== id); savePropostas(); renderAll();
+  };
+  window.copyProposal = async function (id) {
+    const original = propostas.find(x => x.id === id);
+    if (!original) return;
+    if (!original.grupoId) original.grupoId = original.id; // estabelece o grupo na 1ª cópia
+    const copia = Object.assign({}, original, {
+      id: uid(),
+      grupoId: original.grupoId,
+      contarNoVolume: false, // a tentativa original já conta; a cópia não soma por padrão
+      numeroProposta: '',
+      status: 'ATIVO',
+      funil: FUNIL_STAGES[0],
+      dataCriacao: new Date().toISOString().slice(0, 10),
+      dataFollowUp: '',
+      kanbanEtapaId: '',
+      kanbanEnteredAt: '',
+      kanbanStartedAt: '',
+      kanbanHistory: [],
+      emitido: false,
+      dataEmissao: '',
+      comissaoValor: '',
+      comissaoData: '',
+      importKey: undefined,
+    });
+    propostas.push(copia);
+    await savePropostas();
+    renderAll();
+    showToast(`Proposta copiada — ajuste o banco e os dados necessários.`);
+    openProposalForm(copia.id);
+  };
+
+  window.openProposalForm = function (id) {
+    const editing = id ? propostas.find(p => p.id === id) : null;
+    const wrap = $('#proposal-modal-wrap');
+    if (!clientes.length) {
+      wrap.innerHTML = `<div class="modal"><p style="font-size:12px;">Cadastre um cliente antes de criar uma proposta.</p><div class="modal-actions"><button onclick="closeModal('proposal-modal-wrap')">Fechar</button></div></div>`;
+      wrap.classList.add('open');
+      return;
+    }
+    const p = editing || {
+      id: uid(), clienteId: clientes[0].id, parceiroId: parceiros[0] ? parceiros[0].id : '', corretor: '',
+      banco: bancos[0] ? bancos[0].nome : '', plataforma: PLATAFORMAS[0], numeroProposta: '', status: 'ATIVO', funil: FUNIL_STAGES[0],
+      dataCriacao: new Date().toISOString().slice(0, 10), dataFollowUp: '', observacao: '',
+      valorImovel: '', fgts: '0', valorFinanciado: '', valorAvaliacaoBanco: '', itbi: '',
+      prazoAcordado: '', taxaAcordada: '', valorIQ: '', emitido: false,
+    };
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title">${editing ? 'Editar proposta' : 'Nova proposta'}</p>
+        ${editing && p.kanbanEtapaId ? `<p class="muted" style="font-size:10.5px; margin-top:-8px; margin-bottom:10px;"><i class="ti ti-layout-kanban" style="font-size:12px; vertical-align:-2px;"></i> Etapa atual no Kanban: ${kanbanEtapaBadge(p.kanbanEtapaId)}</p>` : ''}
+        <div class="form-grid">
+          <div class="field field-full" style="position:relative;">
+            <label>Cliente</label>
+            <input type="text" id="f-clienteSearch" placeholder="Digite parte do nome…" autocomplete="off" value="${escapeHtml(clienteNome(p.clienteId))}" />
+            <input type="hidden" id="f-clienteId" value="${p.clienteId || ''}" />
+            <div id="f-cliente-suggestions" class="autocomplete-panel"></div>
+          </div>
+          <div class="field"><label>Parceiro</label><select id="f-parceiroId"><option value="">Sem parceiro</option>${parceiros.map(pa => `<option value="${pa.id}" ${pa.id === p.parceiroId ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}</select></div>
+          <div class="field"><label>Corretor</label><input id="f-corretor" value="${escapeHtml(p.corretor)}" /></div>
+          <div class="field"><label>Banco</label><select id="f-banco">${bancos.map(b => `<option value="${b.nome}" ${b.nome === p.banco ? 'selected' : ''}>${b.nome}</option>`).join('')}${!bancos.length ? '<option value="">Cadastre um banco na aba Bancos</option>' : ''}</select></div>
+          <div class="field"><label>Plataforma</label><select id="f-plataforma">${PLATAFORMAS.map(b => `<option value="${b}" ${b === p.plataforma ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
+          <div class="field"><label>Nº proposta</label><input id="f-numeroProposta" value="${escapeHtml(p.numeroProposta)}" /></div>
+          <div class="field"><label>Status</label><select id="f-status">${['ATIVO','INATIVO'].map(s => `<option value="${s}" ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+          <div class="field"><label>Status funil</label><select id="f-funil">${FUNIL_STAGES.map(s => `<option value="${s}" ${s === p.funil ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+          <div class="field"><label>Data da proposta</label><input type="date" id="f-dataCriacao" value="${p.dataCriacao || ''}" /></div>
+          <div class="field"><label>Próximo follow-up</label><input type="date" id="f-dataFollowUp" value="${p.dataFollowUp || ''}" /></div>
+          <div class="field" style="justify-content:flex-end;"><label>&nbsp;</label>
+            <label style="display:flex; gap:6px; align-items:center; height:36px; font-weight:400;">
+              <input type="checkbox" id="f-emitido" ${p.emitido ? 'checked' : ''} style="width:auto; height:auto;" /><span>Emitido?</span>
+            </label>
+          </div>
+          <div class="field"><label>Data de emissão</label><input type="date" id="f-dataEmissao" value="${p.dataEmissao || ''}" /></div>
+          <div class="field field-full"><label>Observação</label><textarea id="f-observacao" rows="2" style="width:100%; font-family:inherit; padding:8px; border-radius:var(--ac-radius); border:1px solid var(--ac-border-strong); background:var(--ac-surface); text-transform:uppercase;">${escapeHtml(p.observacao)}</textarea></div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--ac-border); margin:1rem 0;">
+        <p class="card-title" style="font-size:12px;"><i class="ti ti-report-money"></i>Valores</p>
+        <div class="form-grid">
+          <div class="field"><label>Valor compra e venda imóvel</label><input type="number" id="f-valorImovel" value="${p.valorImovel}" /></div>
+          <div class="field"><label>Valor entrada FGTS</label><input type="number" id="f-fgts" value="${p.fgts}" /></div>
+          <div class="field"><label>Valor de financiamento</label><input type="number" id="f-valorFinanciado" value="${p.valorFinanciado}" /></div>
+          <div class="field"><label>Valor entrada recurso próprio (calculado)</label><input type="text" id="f-recProprios" readonly /></div>
+          <div class="field"><label>Valor avaliação banco</label><input type="number" id="f-valorAvaliacaoBanco" value="${p.valorAvaliacaoBanco}" /></div>
+          <div class="field"><label>Valor ITBI</label><input type="number" id="f-itbi" value="${p.itbi}" /></div>
+          <div class="field"><label>Prazo acordado (meses)</label><input type="number" id="f-prazoAcordado" value="${p.prazoAcordado}" /></div>
+          <div class="field"><label>Taxa acordada (% a.a.)</label><input type="number" step="0.01" id="f-taxaAcordada" value="${p.taxaAcordada}" /></div>
+          <div class="field"><label>Valor IQ</label><input type="number" id="f-valorIQ" value="${p.valorIQ}" /></div>
+          <div class="field"><label>Possui IQ?</label><input type="text" id="f-possuiIQ" readonly /></div>
+          <div class="field"><label>Valor total contratado (calculado)</label><input type="text" id="f-valorTotalContratado" readonly /></div>
+          <div class="field"><label>Valor pgto vendedores (calculado)</label><input type="text" id="f-valorPagoVendedor" readonly /></div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--ac-border); margin:1rem 0;">
+        <p class="card-title" style="font-size:12px;"><i class="ti ti-git-branch"></i>Operação — outras tentativas deste cliente</p>
+        <p class="muted" style="font-size:10px; margin-top:-6px;">Quando o mesmo cliente tenta em mais de um banco, só uma tentativa deve contar no volume total (Dashboard/Financeiro) — as outras ficam registradas, mas fora da soma.</p>
+        <div id="f-grupo-panel"></div>
+        <p id="f-error" style="font-size:12px; color:var(--ac-red); display:none;"></p>
+        <div class="modal-actions">
+          <button onclick="closeModal('proposal-modal-wrap')">Cancelar</button>
+          <button onclick="saveProposalForm('${p.id}')"><i class="ti ti-check" style="font-size:12px; vertical-align:-2px; margin-right:4px;"></i>Salvar</button>
+        </div>
+      </div>`;
+    wrap.classList.add('open');
+    renderGrupoPanel(p.id, p.grupoId);
+
+    function updateCalc() {
+      const vi = Number($('#f-valorImovel').value) || 0;
+      const vf = Number($('#f-valorFinanciado').value) || 0;
+      const fgts = Number($('#f-fgts').value) || 0;
+      const itbi = Number($('#f-itbi').value) || 0;
+      const iq = Number($('#f-valorIQ').value) || 0;
+      $('#f-recProprios').value = fmtMoney(vi - vf - fgts);
+      $('#f-possuiIQ').value = iq > 0 ? 'SIM' : 'NÃO';
+      $('#f-valorTotalContratado').value = fmtMoney(vf + itbi);
+      $('#f-valorPagoVendedor').value = fmtMoney(vf + fgts);
+    }
+    ['f-valorImovel', 'f-valorFinanciado', 'f-fgts', 'f-itbi', 'f-valorIQ'].forEach(id => $('#' + id).addEventListener('input', updateCalc));
+    updateCalc();
+
+    // autocomplete de cliente
+    const searchEl = $('#f-clienteSearch');
+    const panelEl = $('#f-cliente-suggestions');
+    function renderClienteSuggestions(query) {
+      const q = query.trim().toLowerCase();
+      const matches = (q ? clientes.filter(c => c.nome.toLowerCase().includes(q) || (c.cpf || '').includes(q)) : clientes).slice(0, 10);
+      if (!matches.length) { panelEl.innerHTML = '<div class="autocomplete-item muted">Nenhum cliente encontrado.</div>'; }
+      else {
+        panelEl.innerHTML = matches.map(c => `<div class="autocomplete-item" data-id="${c.id}" data-nome="${escapeHtml(c.nome)}">${escapeHtml(c.nome)}${c.cpf ? `<div class="ac-sub">CPF ${escapeHtml(c.cpf)}</div>` : ''}</div>`).join('');
+      }
+      panelEl.classList.add('open');
+    }
+    searchEl.addEventListener('focus', () => renderClienteSuggestions(searchEl.value));
+    searchEl.addEventListener('input', () => { $('#f-clienteId').value = ''; renderClienteSuggestions(searchEl.value); });
+    panelEl.addEventListener('mousedown', (e) => {
+      const item = e.target.closest('.autocomplete-item[data-id]');
+      if (!item) return;
+      searchEl.value = item.dataset.nome;
+      $('#f-clienteId').value = item.dataset.id;
+      panelEl.classList.remove('open');
+      const currentGrupoPanel = $('#f-grupo-panel');
+      if (currentGrupoPanel) renderGrupoPanel(id, propostas.find(x => x.id === id) ? propostas.find(x => x.id === id).grupoId : '');
+    });
+    document.addEventListener('click', function onDocClick(e) {
+      if (!panelEl.contains(e.target) && e.target !== searchEl) panelEl.classList.remove('open');
+    });
+  };
+
+  window.saveProposalForm = function (id) {
+    const dataCriacao = $('#f-dataCriacao').value;
+    const errEl = $('#f-error');
+    if (!dataCriacao) { errEl.textContent = 'INFORME A DATA DA PROPOSTA.'; errEl.style.display = 'block'; return; }
+    if (!$('#f-clienteId').value) { errEl.textContent = 'SELECIONE UM CLIENTE DA LISTA DE SUGESTÕES.'; errEl.style.display = 'block'; return; }
+    errEl.style.display = 'none';
+    const existing = propostas.find(p => p.id === id) || {};
+    const data = Object.assign({}, existing, {
+      id,
+      clienteId: $('#f-clienteId').value, parceiroId: $('#f-parceiroId').value,
+      corretor: $('#f-corretor').value.trim(), banco: $('#f-banco').value, plataforma: $('#f-plataforma').value,
+      numeroProposta: $('#f-numeroProposta').value.trim(), status: $('#f-status').value, funil: $('#f-funil').value,
+      dataCriacao, dataFollowUp: $('#f-dataFollowUp').value, observacao: $('#f-observacao').value.trim(),
+      emitido: $('#f-emitido').checked, dataEmissao: $('#f-dataEmissao').value,
+      valorImovel: $('#f-valorImovel').value, fgts: $('#f-fgts').value, valorFinanciado: $('#f-valorFinanciado').value,
+      valorAvaliacaoBanco: $('#f-valorAvaliacaoBanco').value, itbi: $('#f-itbi').value,
+      prazoAcordado: $('#f-prazoAcordado').value, taxaAcordada: $('#f-taxaAcordada').value, valorIQ: $('#f-valorIQ').value,
+    });
+    const idx = propostas.findIndex(p => p.id === id);
+    if (idx >= 0) propostas[idx] = data; else propostas.push(data);
+    savePropostas();
+    closeModal('proposal-modal-wrap');
+    renderAll();
+  };
+
+  // ================= CRM KANBAN =================
+  let etapaFormOpen = false;
+  window.openEtapaManager = function () {
+    etapaFormOpen = false;
+    renderEtapaManagerBody();
+  };
+  function renderEtapaManagerBody() {
+    const wrap = $('#etapa-modal-wrap');
+    wrap.innerHTML = `
+      <div class="modal modal-compact">
+        <p class="card-title"><i class="ti ti-settings"></i>Etapas (máx. 10)</p>
+        <div id="etapa-list">${kanbanEtapas.map((et, idx) => `
+          <div class="etapa-row">
+            <div class="etapa-reorder">
+              <button onclick="moveEtapaOrder(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} title="Subir"><i class="ti ti-chevron-up"></i></button>
+              <button onclick="moveEtapaOrder(${idx}, 1)" ${idx === kanbanEtapas.length - 1 ? 'disabled' : ''} title="Descer"><i class="ti ti-chevron-down"></i></button>
+            </div>
+            <span class="etapa-swatch" style="background:${et.cor};"></span>
+            <span style="flex:1; font-size:11px;">${escapeHtml(et.nome)}${et.emitido ? ' <span class="badge" style="background:var(--ac-green-tint); color:var(--ac-green);">EMITIDO</span>' : ''}</span>
+            <button class="icon-btn" onclick="editEtapa('${et.id}')"><i class="ti ti-edit" style="font-size:11px;"></i></button>
+            <button class="icon-btn danger" onclick="removeEtapa('${et.id}')"><i class="ti ti-trash" style="font-size:11px;"></i></button>
+          </div>`).join('') || '<p class="muted" style="font-size:11px;">Nenhuma etapa cadastrada.</p>'}
+        </div>
+        <div id="etapa-form-toggle">
+          ${kanbanEtapas.length < 10 ? '<div class="modal-actions"><button onclick="toggleEtapaForm()"><i class="ti ti-plus" style="font-size:11px; margin-right:4px;"></i>Nova etapa</button></div>' : '<p class="muted" style="font-size:10px; margin-top:8px;">Limite de 10 etapas atingido.</p>'}
+        </div>
+        <div id="etapa-form-area"></div>
+        <div class="modal-actions"><button onclick="closeModal('etapa-modal-wrap')">Fechar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  }
+  window.moveEtapaOrder = async function (idx, dir) {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= kanbanEtapas.length) return;
+    const tmp = kanbanEtapas[idx];
+    kanbanEtapas[idx] = kanbanEtapas[newIdx];
+    kanbanEtapas[newIdx] = tmp;
+    await saveEtapas();
+    renderEtapaManagerBody();
+    renderKanban();
+  };
+  function etapaFormHtml(et) {
+    return `
+      <hr style="border:none; border-top:1px solid var(--ac-border);">
+      <div class="form-grid">
+        <div class="field"><label>Nome</label><input id="et-nome" value="${et ? escapeHtml(et.nome) : ''}" /></div>
+        <div class="field"><label>Cor do cabeçalho</label><input type="color" id="et-cor" value="${et ? et.cor : '#0E4C42'}" style="height:30px !important; padding:2px;" /></div>
+        <div class="field"><label>Cor do card</label><input type="color" id="et-cardCor" value="${et && et.cardCor ? et.cardCor : '#F0EFE9'}" style="height:30px !important; padding:2px;" /></div>
+        <div class="field"><label>Cor do texto do card</label><input type="color" id="et-cardTextCor" value="${et && et.cardTextCor ? et.cardTextCor : '#1B231F'}" style="height:30px !important; padding:2px;" /></div>
+        <div class="field"><label>Tempo médio nesta etapa (dias)</label><input type="number" id="et-tempoMedio" value="${et && et.tempoMedioDias ? et.tempoMedioDias : ''}" placeholder="Ex: 5" /></div>
+      </div>
+      <p class="muted" style="font-size:9.5px; margin-top:4px;">Usado pro semáforo do card: verde dentro do prazo, amarelo perto do limite, vermelho passou do tempo médio.</p>
+      <label style="display:flex; gap:6px; align-items:center; margin-top:8px; font-size:10px; font-weight:400;">
+        <input type="checkbox" id="et-emitido" ${et && et.emitido ? 'checked' : ''} style="width:auto; height:auto;" />
+        <span>Representa "Emitido"</span>
+      </label>
+      <div class="modal-actions"><button onclick="saveEtapaForm('${et ? et.id : ''}')"><i class="ti ti-check" style="font-size:11px; margin-right:4px;"></i>Salvar etapa</button></div>
+    `;
+  }
+  window.toggleEtapaForm = function () {
+    etapaFormOpen = !etapaFormOpen;
+    $('#etapa-form-area').innerHTML = etapaFormOpen ? etapaFormHtml(null) : '';
+  };
+  window.editEtapa = function (id) {
+    const et = kanbanEtapas.find(e => e.id === id);
+    if (!et) return;
+    etapaFormOpen = true;
+    $('#etapa-form-area').innerHTML = etapaFormHtml(et);
+  };
+  window.saveEtapaForm = async function (id) {
+    const nome = $('#et-nome').value.trim();
+    if (!nome) return;
+    const data = { id: id || uid(), nome, cor: $('#et-cor').value, cardCor: $('#et-cardCor').value, cardTextCor: $('#et-cardTextCor').value, tempoMedioDias: $('#et-tempoMedio').value, emitido: $('#et-emitido').checked };
+    if (id) {
+      const idx = kanbanEtapas.findIndex(e => e.id === id);
+      if (idx >= 0) kanbanEtapas[idx] = data;
+    } else {
+      if (kanbanEtapas.length >= 10) return;
+      kanbanEtapas.push(data);
+    }
+    await saveEtapas();
+    openEtapaManager();
+    renderKanban();
+  };
+  window.removeEtapa = async function (id) {
+    if (!confirm('EXCLUIR ESTA ETAPA? AS PROPOSTAS NELA VOLTAM PARA "SEM ETAPA" NO KANBAN.')) return;
+    kanbanEtapas = kanbanEtapas.filter(e => e.id !== id);
+    propostas.forEach(p => { if (p.kanbanEtapaId === id) p.kanbanEtapaId = ''; });
+    await saveEtapas();
+    await savePropostas();
+    openEtapaManager();
+    renderKanban();
+  };
+
+  window.openAddToKanban = function () {
+    const wrap = $('#kanban-add-modal-wrap');
+    if (!kanbanEtapas.length) {
+      wrap.innerHTML = `<div class="modal"><p style="font-size:12px;">Cadastre ao menos uma etapa antes de adicionar propostas ao kanban.</p><div class="modal-actions"><button onclick="closeModal('kanban-add-modal-wrap')">Fechar</button></div></div>`;
+      wrap.classList.add('open'); return;
+    }
+    renderAddToKanbanModal('', 'ATIVO');
+  };
+  function renderAddToKanbanModal(funilFilter, statusFilter) {
+    const wrap = $('#kanban-add-modal-wrap');
+    const available = propostas.filter(p => !p.kanbanEtapaId && (!funilFilter || p.funil === funilFilter) && (!statusFilter || (p.status || 'ATIVO') === statusFilter));
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title"><i class="ti ti-plus"></i>Adicionar proposta ao kanban</p>
+        <div class="form-grid">
+          <div class="field"><label>Filtrar por status</label>
+            <select id="ka-filtro-status" onchange="updateKanbanAddFilters()">
+              <option value="">Todos</option>
+              <option value="ATIVO" ${statusFilter === 'ATIVO' ? 'selected' : ''}>Ativo</option>
+              <option value="INATIVO" ${statusFilter === 'INATIVO' ? 'selected' : ''}>Inativo</option>
+            </select>
+          </div>
+          <div class="field"><label>Filtrar por status funil</label>
+            <select id="ka-filtro-funil" onchange="updateKanbanAddFilters()">
+              <option value="">Todos</option>${FUNIL_STAGES.map(f => `<option value="${f}" ${f === funilFilter ? 'selected' : ''}>${f}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field field-full"><label>Proposta (${available.length} dispon\u00edvel${available.length === 1 ? '' : 'is'})</label>
+            <select id="ka-proposta">${available.length ? available.map(p => `<option value="${p.id}">${escapeHtml(clienteNome(p.clienteId))} — ${escapeHtml(p.banco || '')}</option>`).join('') : '<option value="">Nenhuma proposta disponível</option>'}</select>
+          </div>
+          <div class="field field-full"><label>Etapa inicial</label>
+            <select id="ka-etapa">${kanbanEtapas.map(e => `<option value="${e.id}">${escapeHtml(e.nome)}</option>`).join('')}</select>
+          </div>
+        </div>
+        <div class="modal-actions"><button onclick="closeModal('kanban-add-modal-wrap')">Cancelar</button><button onclick="confirmAddToKanban()">Adicionar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  }
+  window.renderAddToKanbanModal = renderAddToKanbanModal;
+  window.updateKanbanAddFilters = function () {
+    const funil = document.getElementById('ka-filtro-funil').value;
+    const status = document.getElementById('ka-filtro-status').value;
+    renderAddToKanbanModal(funil, status);
+  };
+  window.confirmAddToKanban = async function () {
+    const pid = $('#ka-proposta').value;
+    const eid = $('#ka-etapa').value;
+    if (!pid || !eid) return;
+    const p = propostas.find(x => x.id === pid);
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (p) {
+      p.kanbanEtapaId = eid;
+      p.kanbanEnteredAt = hoje;
+      if (!p.kanbanStartedAt) p.kanbanStartedAt = hoje;
+      p.kanbanHistory = [{ etapaId: eid, enteredAt: hoje, exitedAt: '' }];
+    }
+    await savePropostas();
+    closeModal('kanban-add-modal-wrap');
+    renderKanban();
+  };
+  window.moveKanbanCard = async function (pid, etapaId) {
+    const p = propostas.find(x => x.id === pid);
+    const etapa = kanbanEtapas.find(e => e.id === etapaId);
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (p) {
+      p.kanbanHistory = p.kanbanHistory || [];
+      const last = p.kanbanHistory[p.kanbanHistory.length - 1];
+      if (last && !last.exitedAt) last.exitedAt = hoje;
+      p.kanbanHistory.push({ etapaId, enteredAt: hoje, exitedAt: '' });
+      p.kanbanEtapaId = etapaId;
+      p.kanbanEnteredAt = hoje;
+      if (!p.kanbanStartedAt) p.kanbanStartedAt = hoje;
+      if (etapa && etapa.emitido) p.emitido = true;
+    }
+    await savePropostas();
+    renderKanban();
+  };
+  window.toggleKanbanSomarTotal = async function (pid, checked) {
+    const p = propostas.find(x => x.id === pid);
+    if (p) p.kanbanSomarTotal = checked;
+    await savePropostas();
+    renderKanban();
+  };
+  window.removeFromKanban = async function (pid) {
+    const p = propostas.find(x => x.id === pid);
+    if (p) { p.kanbanEtapaId = ''; p.kanbanEnteredAt = ''; }
+    await savePropostas();
+    renderKanban();
+  };
+
+  function semaforoColor(diasEtapa, tempoMedio) {
+    if (diasEtapa === null) return '#999';
+    if (!tempoMedio) return diasEtapa > 7 ? '#A23B32' : diasEtapa > 3 ? '#A7752B' : '#2E7D53';
+    if (diasEtapa <= tempoMedio * 0.7) return '#2E7D53';
+    if (diasEtapa <= tempoMedio) return '#A7752B';
+    return '#A23B32';
+  }
+  function renderKanban() {
+    $('#kanban-empty').style.display = kanbanEtapas.length ? 'none' : 'block';
+    const board = $('#kanban-board');
+    board.innerHTML = kanbanEtapas.map(et => {
+      const cards = propostas.filter(p => p.kanbanEtapaId === et.id);
+      const totalEtapa = cards.filter(p => p.kanbanSomarTotal !== false).reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
+      return `
+        <div class="kanban-col" data-etapa="${et.id}">
+          <div class="kanban-col-head" style="background:${et.cor};"><span>${escapeHtml(et.nome)}</span><span>${cards.length}</span></div>
+          <div class="kanban-col-total">${fmtMoney(totalEtapa)}</div>
+          <div class="kanban-col-body">
+            ${cards.length ? cards.map(p => {
+              const diasEtapa = daysSince(p.kanbanEnteredAt);
+              const diasTotal = daysSince(p.kanbanStartedAt);
+              const tempoMedio = Number(et.tempoMedioDias) || 0;
+              const semColor = semaforoColor(diasEtapa, tempoMedio);
+              const cardStyle = `background:${et.cardCor || 'var(--ac-surface-alt)'}; color:${et.cardTextCor || 'inherit'};`;
+              const somaAtiva = p.kanbanSomarTotal !== false;
+              return `
+              <div class="kanban-card" draggable="true" data-id="${p.id}" style="${cardStyle}">
+                <div class="kc-name"><span style="display:inline-block; width:9px; height:9px; border-radius:50%; background:${semColor}; margin-right:6px; vertical-align:1px;" title="${tempoMedio ? 'Tempo médio da etapa: ' + tempoMedio + ' dia(s)' : 'Sem tempo médio definido'}"></span>${escapeHtml(clienteNome(p.clienteId))}</div>
+                <div class="kc-meta" style="color:inherit; opacity:0.85;">Nº ${escapeHtml(p.numeroProposta || '—')}<br>${escapeHtml(parceiroNome(p.parceiroId))}<br>${bancoPill(p.banco)} · ${fmtMoney(p.valorFinanciado)}<br>Total: ${diasTotal === null ? '—' : diasTotal + 'd'} · Nesta etapa: ${diasEtapa === null ? '—' : diasEtapa + 'd'}${tempoMedio ? ' / ' + tempoMedio + 'd' : ''}</div>
+                <label class="kc-soma-check" style="color:inherit;"><input type="checkbox" ${somaAtiva ? 'checked' : ''} onchange="toggleKanbanSomarTotal('${p.id}', this.checked)" /> Somar no total da etapa</label>
+                <select onchange="moveKanbanCard('${p.id}', this.value)">
+                  ${kanbanEtapas.map(e2 => `<option value="${e2.id}" ${e2.id === et.id ? 'selected' : ''}>${escapeHtml(e2.nome)}</option>`).join('')}
+                </select>
+                <span class="kc-remove" onclick="removeFromKanban('${p.id}')">Remover</span>
+              </div>`; }).join('') : '<p class="muted" style="font-size:9px; padding:6px 2px;">Sem propostas.</p>'}
+          </div>
+        </div>`;
+    }).join('');
+
+    // drag and drop wiring
+    $$('.kanban-card').forEach(card => {
+      card.addEventListener('dragstart', e => { card.classList.add('dragging'); e.dataTransfer.setData('text/plain', card.dataset.id); });
+      card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    });
+    $$('.kanban-col').forEach(col => {
+      col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('drag-over'); });
+      col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
+      col.addEventListener('drop', e => {
+        e.preventDefault();
+        col.classList.remove('drag-over');
+        const pid = e.dataTransfer.getData('text/plain');
+        const etapaId = col.dataset.etapa;
+        if (pid && etapaId) moveKanbanCard(pid, etapaId);
+      });
+    });
+  }
+
+  // ================= SOLICITAÇÕES =================
+  let solFilters = { status: '' };
+  function renderSolFilters() {
+    $('#sol-filters').innerHTML = `
+      <div class="field"><label>Status</label>
+        <select id="sf-status"><option value="">Todos</option><option value="Nova" ${solFilters.status === 'Nova' ? 'selected' : ''}>Nova</option><option value="Processada" ${solFilters.status === 'Processada' ? 'selected' : ''}>Processada</option></select>
+      </div>
+      <button onclick="clearSolFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
+    `;
+    $('#sf-status').addEventListener('change', e => { solFilters.status = e.target.value; renderSolicitacoes(); });
+  }
+  window.clearSolFilters = function () { solFilters = { status: '' }; renderSolicitacoes(); };
+
+  function renderSolicitacoes() {
+    renderSolFilters();
+    const q = ($('#sol-search').value || '').toLowerCase();
+    let rows = solicitacoes.filter(s =>
+      (s.nome || '').toLowerCase().includes(q) || (s.telefone || '').toLowerCase().includes(q) || (s.corretor || '').toLowerCase().includes(q)
+    );
+    if (solFilters.status) rows = rows.filter(s => (s.status || 'Nova') === solFilters.status);
+    rows = rows.slice().sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
+    const tbl = $('#solicitacoes-table');
+    tbl.innerHTML = rows.length
+      ? `<thead><tr><th>Recebido em</th><th>Nome</th><th>Telefone</th><th>Corretor</th><th>Valor do imóvel</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows.map(s => `
+          <tr>
+            <td>${s.criadoEm ? new Date(s.criadoEm).toLocaleString('pt-BR') : '—'}</td>
+            <td>${escapeHtml(s.nome)}</td>
+            <td>${escapeHtml(s.telefone || '—')}</td>
+            <td>${escapeHtml(s.corretor || '—')}</td>
+            <td>${fmtMoney(s.valorImovel)}</td>
+            <td><span class="badge" style="background:${s.status === 'Processada' ? '#DCEEE2' : '#FCEACB'}; color:${s.status === 'Processada' ? '#1F6B3F' : '#8A6116'};">${escapeHtml(s.status || 'Nova')}</span></td>
+            <td class="row-actions">
+              <button class="icon-btn" onclick="openSolicitacaoView('${s.id}')"><i class="ti ti-eye" style="font-size:12px;"></i>Abrir</button>
+              <button class="icon-btn" onclick="convertSolicitacao('${s.id}')"><i class="ti ti-arrow-right" style="font-size:12px;"></i>Criar proposta</button>
+            </td>
+          </tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhuma solicitação encontrada.</td></tr>`;
+  }
+  $('#sol-search').addEventListener('input', renderSolicitacoes);
+
+  function solField(label, value) {
+    return `<div class="field"><label>${label}</label><div style="font-size:11px; padding:6px 0; border-bottom:1px solid var(--ac-border);">${escapeHtml(value || '—')}</div></div>`;
+  }
+  window.openSolicitacaoView = function (id) {
+    const s = solicitacoes.find(x => x.id === id);
+    if (!s) return;
+    const end = s.endereco || {};
+    const wrap = $('#solicitacao-view-modal-wrap');
+    wrap.innerHTML = `
+      <div class="modal" style="max-width:640px;">
+        <p class="card-title"><i class="ti ti-file-description"></i>Solicitação de ${escapeHtml(s.nome)}</p>
+        <p class="muted" style="font-size:10px; margin-top:-6px;">Recebida em ${s.criadoEm ? new Date(s.criadoEm).toLocaleString('pt-BR') : '—'}</p>
+
+        <p class="card-title" style="font-size:11px; margin-top:14px;"><i class="ti ti-calculator"></i>Simulação</p>
+        <div class="form-grid">
+          ${solField('Valor compra e venda', fmtMoney(s.valorCompra))}
+          ${solField('Prazo', s.prazo)}
+          ${solField('Incluir despesas', s.incluirDespesas)}
+          ${solField('Corretor', s.corretor)}
+          ${solField('Entrada', fmtMoney(s.entrada))}
+          ${solField('FGTS', fmtMoney(s.fgts))}
+        </div>
+        ${s.bancos && s.bancos.length ? `<p class="muted" style="font-size:10.5px; margin-top:8px;">Bancos: ${s.bancos.map(b => escapeHtml(b.banco) + (b.agencia ? ` (Ag ${escapeHtml(b.agencia)} / Cc ${escapeHtml(b.conta)})` : '')).join(', ')}</p>` : ''}
+
+        <p class="card-title" style="font-size:11px; margin-top:14px;"><i class="ti ti-user"></i>Dados pessoais</p>
+        <div class="form-grid">
+          ${solField('Nome', s.nome)}${solField('CPF', s.cpf)}${solField('RG', s.rg)}
+          ${solField('Nascimento', fmtDate(s.nascimento))}${solField('Estado civil', s.estadoCivil)}${solField('Telefone', s.telefone)}
+          ${solField('E-mail', s.email)}${solField('Nome da mãe', s.nomeMae)}
+        </div>
+        <p class="muted" style="font-size:10.5px; margin-top:6px;">${escapeHtml(end.rua || '')} ${escapeHtml(end.numero || '')} ${escapeHtml(end.complemento || '')} — ${escapeHtml(end.bairro || '')}, ${escapeHtml(end.cidade || '')}/${escapeHtml(end.uf || '')} — CEP ${escapeHtml(end.cep || '—')}</p>
+
+        <p class="card-title" style="font-size:11px; margin-top:14px;"><i class="ti ti-briefcase"></i>Trabalho</p>
+        <div class="form-grid">
+          ${solField('Empresa', s.empresa)}${solField('Cargo', s.cargo)}${solField('Tempo de empresa', s.tempoEmpresa)}
+          ${solField('Data de contratação', fmtDate(s.dataContratacao))}${solField('Tipo de contratação', s.tipoContratacao)}${s.tipoContratacao === 'SÓCIO PROPRIETÁRIO' ? solField('CNPJ', s.cnpj) : ''}
+          ${solField('Renda mensal', fmtMoney(s.renda))}
+        </div>
+
+        ${s.possuiConjuge || s.conjugeNome ? `
+        <p class="card-title" style="font-size:11px; margin-top:14px;"><i class="ti ti-heart"></i>Cônjuge ${s.possuiConjuge ? '(compõe renda)' : ''}</p>
+        <div class="form-grid">
+          ${solField('Nome', s.conjugeNome)}${solField('CPF', s.conjugeCpf)}${solField('RG', s.conjugeRg)}
+          ${solField('Nascimento', fmtDate(s.conjugeNascimento))}${solField('Telefone', s.conjugeTelefone)}${solField('E-mail', s.conjugeEmail)}
+          ${solField('Nome da mãe', s.conjugeNomeMae)}
+          ${s.possuiConjuge ? solField('Empresa', s.conjugeEmpresa) + solField('Cargo', s.conjugeCargo) + solField('Tempo de empresa', s.conjugeTempoEmpresa) + solField('Data de contratação', fmtDate(s.conjugeDataContratacao)) + solField('Tipo de contratação', s.conjugeTipoContratacao) + (s.conjugeTipoContratacao === 'SÓCIO PROPRIETÁRIO' ? solField('CNPJ', s.conjugeCnpj) : '') + solField('Renda mensal', fmtMoney(s.conjugeRenda)) : ''}
+        </div>` : ''}
+
+        <p class="card-title" style="font-size:11px; margin-top:14px;"><i class="ti ti-home"></i>Imóvel</p>
+        <div class="form-grid">
+          ${solField('Cidade', s.cidade)}${solField('Tipo', s.tipoImovel)}${solField('Finalidade', s.finalidade)}
+        </div>
+        ${s.observacao ? `<p class="muted" style="font-size:10.5px; margin-top:6px;">Observação: ${escapeHtml(s.observacao)}</p>` : ''}
+
+        <div class="modal-actions">
+          <button onclick="closeModal('solicitacao-view-modal-wrap')">Fechar</button>
+          <button onclick="convertSolicitacao('${s.id}')">Criar proposta</button>
+        </div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+  window.convertSolicitacao = async function (id) {
+    const s = solicitacoes.find(x => x.id === id);
+    if (!s) return;
+    closeModal('solicitacao-view-modal-wrap');
+    let cliente = clientes.find(c => c.nome.trim().toLowerCase() === s.nome.trim().toLowerCase());
+    if (!cliente) {
+      cliente = { id: uid(), nome: s.nome, cpf: s.cpf || '', telefone: s.telefone || '', email: s.email || '', renda: s.renda || '', observacao: '' };
+      clientes.push(cliente);
+      await saveClientes();
+    }
+    s.status = 'Processada';
+    await saveSolicitacoes();
+    renderAll();
+    $$('.tab').forEach(t => t.classList.remove('active'));
+    $$('.view').forEach(v => v.classList.remove('active'));
+    $('.tab[data-tab="propostas"]').classList.add('active');
+    $('#view-propostas').classList.add('active');
+    renderPropostas();
+    setTimeout(() => {
+      openProposalForm();
+      if ($('#f-clienteId')) { $('#f-clienteId').value = cliente.id; $('#f-clienteSearch').value = cliente.nome; }
+      if ($('#f-valorImovel') && s.valorImovel) $('#f-valorImovel').value = s.valorImovel;
+    }, 50);
+  };
+
+  // ================= CLIENTES =================
+  function renderClientes() {
+    const q = ($('#cli-search').value || '').toLowerCase();
+    const rows = clientes.filter(c => c.nome.toLowerCase().includes(q) || (c.cpf || '').includes(q));
+    const tbl = $('#clientes-table');
+    tbl.innerHTML = rows.length
+      ? `<thead><tr><th>Nome</th><th>CPF</th><th>Telefone</th><th>E-mail</th><th>Propostas</th><th></th></tr></thead>
+        <tbody>${rows.map(c => `<tr>
+          <td>${escapeHtml(c.nome)}</td><td>${escapeHtml(c.cpf || '—')}</td><td>${escapeHtml(c.telefone || '—')}</td><td>${escapeHtml(c.email || '—')}</td>
+          <td>${propostas.filter(p => p.clienteId === c.id).length}</td>
+          <td class="row-actions">
+            <button class="icon-btn" onclick="openClientForm('${c.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+            <button class="icon-btn danger" onclick="deleteClient('${c.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
+          </td></tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhum cliente cadastrado ainda.</td></tr>`;
+  }
+  $('#cli-search').addEventListener('input', renderClientes);
+  window.deleteClient = function (id) {
+    const vinculadas = propostas.filter(p => p.clienteId === id).length;
+    if (vinculadas > 0) { alert(`ESTE CLIENTE POSSUI ${vinculadas} PROPOSTA(S) VINCULADA(S) E NÃO PODE SER EXCLUÍDO. REMOVA AS PROPOSTAS PRIMEIRO.`); return; }
+    if (!confirm('TEM CERTEZA QUE DESEJA EXCLUIR ESTE CLIENTE? ESTA AÇÃO NÃO PODE SER DESFEITA.')) return;
+    clientes = clientes.filter(c => c.id !== id); saveClientes(id); renderAll();
+  };
+  window.openClientForm = function (id) {
+    const editing = id ? clientes.find(c => c.id === id) : null;
+    const c = editing || { id: uid(), nome: '', cpf: '', telefone: '', email: '', renda: '', observacao: '' };
+    const wrap = $('#client-modal-wrap');
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title">${editing ? 'Editar cliente' : 'Novo cliente'}</p>
+        <div class="form-grid">
+          <div class="field field-full"><label>Nome completo</label><input id="c-nome" value="${escapeHtml(c.nome)}" /></div>
+          <div class="field"><label>CPF</label><input id="c-cpf" value="${escapeHtml(c.cpf)}" /></div>
+          <div class="field"><label>Telefone</label><input id="c-telefone" value="${escapeHtml(c.telefone)}" /></div>
+          <div class="field"><label>E-mail</label><input id="c-email" value="${escapeHtml(c.email)}" /></div>
+          <div class="field"><label>Renda mensal (R$)</label><input type="number" id="c-renda" value="${c.renda}" /></div>
+          <div class="field field-full"><label>Observação</label><input id="c-observacao" value="${escapeHtml(c.observacao)}" /></div>
+        </div>
+        <p id="c-error" style="font-size:12px; color:var(--ac-red); display:none;"></p>
+        <div class="modal-actions"><button onclick="closeModal('client-modal-wrap')">Cancelar</button><button onclick="saveClientForm('${c.id}')">Salvar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+  window.saveClientForm = function (id) {
+    const nome = $('#c-nome').value.trim();
+    if (!nome) { $('#c-error').textContent = 'INFORME O NOME DO CLIENTE.'; $('#c-error').style.display = 'block'; return; }
+    const data = { id, nome, cpf: $('#c-cpf').value.trim(), telefone: $('#c-telefone').value.trim(), email: $('#c-email').value.trim(), renda: $('#c-renda').value, observacao: $('#c-observacao').value.trim() };
+    const idx = clientes.findIndex(c => c.id === id);
+    if (idx >= 0) clientes[idx] = data; else clientes.push(data);
+    saveClientes(); closeModal('client-modal-wrap'); renderAll();
+  };
+
+  // ================= PARCEIROS =================
+  function renderParceiros() {
+    const q = ($('#par-search').value || '').toLowerCase();
+    const statusFiltro = $('#par-filtro-status').value;
+    let rows = parceiros.filter(p => (p.nome.toLowerCase().includes(q) || (p.tipo || '').toLowerCase().includes(q) || (p.contato || '').toLowerCase().includes(q)) && (!statusFiltro || (p.status || 'ATIVO') === statusFiltro));
+    const PAR_GETTERS = {
+      nome: p => p.nome.toLowerCase(), tipo: p => (p.tipo || '').toLowerCase(), contato: p => (p.contato || '').toLowerCase(),
+      percentualPadrao: p => Number(p.percentualPadrao) || 0, propostas: p => propostas.filter(x => x.parceiroId === p.id).length,
+      status: p => p.status || 'ATIVO',
+    };
+    rows = genericSort(rows, parSort, PAR_GETTERS[parSort.col] || PAR_GETTERS.nome);
+    const tbl = $('#parceiros-table');
+    tbl.innerHTML = rows.length
+      ? `<thead><tr>
+          <th class="sortable" onclick="setParSort('nome')">Nome${sortArrow(parSort, 'nome')}</th>
+          <th class="sortable" onclick="setParSort('tipo')">Tipo${sortArrow(parSort, 'tipo')}</th>
+          <th class="sortable" onclick="setParSort('contato')">Contato${sortArrow(parSort, 'contato')}</th>
+          <th class="sortable" onclick="setParSort('percentualPadrao')">% padrão repasse${sortArrow(parSort, 'percentualPadrao')}</th>
+          <th class="sortable" onclick="setParSort('status')">Status${sortArrow(parSort, 'status')}</th>
+          <th class="sortable" onclick="setParSort('propostas')">Propostas${sortArrow(parSort, 'propostas')}</th>
+          <th></th></tr></thead>
+        <tbody>${rows.map(p => `<tr>
+          <td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.tipo || '—')}</td><td>${escapeHtml(p.contato || '—')}</td><td>${p.percentualPadrao ? p.percentualPadrao + '%' : '—'}</td>
+          <td>${badgeStatus(p.status || 'ATIVO')}</td>
+          <td>${propostas.filter(x => x.parceiroId === p.id).length}</td>
+          <td class="row-actions">
+            <button class="icon-btn" onclick="openPartnerForm('${p.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+            <button class="icon-btn danger" onclick="deletePartner('${p.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
+          </td></tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhum parceiro encontrado.</td></tr>`;
+  }
+  window.setParSort = function (col) {
+    if (parSort.col === col) parSort.dir *= -1; else { parSort.col = col; parSort.dir = 1; }
+    renderParceiros();
+  };
+  $('#par-search').addEventListener('input', renderParceiros);
+  $('#par-filtro-status').addEventListener('change', renderParceiros);
+  window.deletePartner = async function (id) {
+    const vinculadas = propostas.filter(p => p.parceiroId === id).length;
+    if (vinculadas > 0) { alert(`ESTE PARCEIRO POSSUI ${vinculadas} PROPOSTA(S) VINCULADA(S) E NÃO PODE SER EXCLUÍDO. REMOVA O VÍNCULO NAS PROPOSTAS PRIMEIRO.`); return; }
+    if (!confirm('TEM CERTEZA QUE DESEJA EXCLUIR ESTE PARCEIRO? ESTA AÇÃO NÃO PODE SER DESFEITA.')) return;
+    parceiros = parceiros.filter(p => p.id !== id); saveParceiros(id); renderAll();
+  };
+  window.openPartnerForm = function (id) {
+    const editing = id ? parceiros.find(p => p.id === id) : null;
+    const p = editing || { id: uid(), nome: '', tipo: 'Imobiliária', contato: '', percentualPadrao: '', status: 'ATIVO', email: '', cnpj: '', bancoDeposito: '', agencia: '', conta: '', chavePix: '' };
+    const wrap = $('#partner-modal-wrap');
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title">${editing ? 'Editar parceiro' : 'Novo parceiro'}</p>
+        <div class="form-grid">
+          <div class="field field-full"><label>Nome</label><input id="p-nome" value="${escapeHtml(p.nome)}" /></div>
+          <div class="field"><label>Tipo</label><select id="p-tipo"><option value="Imobiliária" ${p.tipo === 'Imobiliária' ? 'selected' : ''}>Imobiliária</option><option value="Corretor autônomo" ${p.tipo === 'Corretor autônomo' ? 'selected' : ''}>Corretor autônomo</option></select></div>
+          <div class="field"><label>Contato</label><input id="p-contato" value="${escapeHtml(p.contato)}" /></div>
+          <div class="field"><label>% padrão de repasse</label><input type="number" step="0.01" id="p-percentualPadrao" value="${p.percentualPadrao}" /></div>
+          <div class="field"><label>Status</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
+          <div class="field field-full"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
+        </div>
+        <hr style="border:none; border-top:1px solid var(--ac-border); margin:14px 0;">
+        <p class="card-title" style="font-size:11.5px;"><i class="ti ti-building-bank"></i>Dados bancários (para o recibo de comissão)</p>
+        <div class="form-grid">
+          <div class="field"><label>CNPJ / CPF</label><input id="p-cnpj" value="${escapeHtml(p.cnpj || '')}" /></div>
+          <div class="field"><label>Banco</label><input id="p-bancoDeposito" value="${escapeHtml(p.bancoDeposito || '')}" /></div>
+          <div class="field"><label>Agência</label><input id="p-agencia" value="${escapeHtml(p.agencia || '')}" /></div>
+          <div class="field"><label>Conta</label><input id="p-conta" value="${escapeHtml(p.conta || '')}" /></div>
+          <div class="field"><label>Chave PIX</label><input id="p-chavePix" value="${escapeHtml(p.chavePix || '')}" /></div>
+        </div>
+        <p id="p-error" style="font-size:12px; color:var(--ac-red); display:none;"></p>
+        <div class="modal-actions"><button onclick="closeModal('partner-modal-wrap')">Cancelar</button><button onclick="savePartnerForm('${p.id}')">Salvar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+  window.savePartnerForm = function (id) {
+    const nome = $('#p-nome').value.trim();
+    if (!nome) { $('#p-error').textContent = 'INFORME O NOME DO PARCEIRO.'; $('#p-error').style.display = 'block'; return; }
+    const data = {
+      id, nome, tipo: $('#p-tipo').value, contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: $('#p-status').value,
+      email: $('#p-email').value.trim(), cnpj: $('#p-cnpj').value.trim(), bancoDeposito: $('#p-bancoDeposito').value.trim(), agencia: $('#p-agencia').value.trim(), conta: $('#p-conta').value.trim(), chavePix: $('#p-chavePix').value.trim(),
+    };
+    const idx = parceiros.findIndex(p => p.id === id);
+    if (idx >= 0) parceiros[idx] = data; else parceiros.push(data);
+    saveParceiros(); closeModal('partner-modal-wrap'); renderAll();
+  };
+
+  // ================= BANCOS =================
+  function bancoLogo(nomeBanco) {
+    const b = bancos.find(x => x.nome === nomeBanco);
+    return b && b.logo ? b.logo : '';
+  }
+  function kanbanEtapaBadge(etapaId) {
+    const et = kanbanEtapas.find(e => e.id === etapaId);
+    if (!et) return '<span class="muted" style="font-size:10px;">Etapa removida</span>';
+    return `<span class="badge" style="background:${et.cor}; color:#fff;">${escapeHtml(et.nome)}</span>`;
+  }
+  function bancoPill(nomeBanco) {
+    const logo = bancoLogo(nomeBanco);
+    return `<span class="banco-pill">${logo ? `<img src="${logo}" alt="" />` : ''}${escapeHtml(nomeBanco || '—')}</span>`;
+  }
+  function resizeImageFile(file, maxSize) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/png', 0.9));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function renderBancos() {
+    const tbl = $('#bancos-table');
+    tbl.innerHTML = bancos.length
+      ? `<thead><tr><th>Logo</th><th>Nome</th><th>% comissão</th><th>Propostas</th><th></th></tr></thead>
+        <tbody>${bancos.map(b => `<tr>
+          <td>${b.logo ? `<img src="${b.logo}" class="banco-pill" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" alt="" />` : '<span class="muted">—</span>'}</td>
+          <td>${escapeHtml(b.nome)}</td>
+          <td>${b.percentualComissao ? b.percentualComissao + '%' : '—'}</td>
+          <td>${propostas.filter(p => p.banco === b.nome).length}</td>
+          <td class="row-actions">
+            <button class="icon-btn" onclick="openBancoForm('${b.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+            <button class="icon-btn danger" onclick="deleteBanco('${b.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
+          </td>
+        </tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhum banco cadastrado ainda.</td></tr>`;
+  }
+  window.deleteBanco = async function (id) {
+    const b = bancos.find(x => x.id === id);
+    const vinculadas = propostas.filter(p => p.banco === (b && b.nome)).length;
+    if (vinculadas > 0) { alert(`ESTE BANCO POSSUI ${vinculadas} PROPOSTA(S) VINCULADA(S) E NÃO PODE SER EXCLUÍDO.`); return; }
+    if (!confirm('TEM CERTEZA QUE DESEJA EXCLUIR ESTE BANCO?')) return;
+    bancos = bancos.filter(x => x.id !== id);
+    await saveBancos(id);
+    renderAll();
+  };
+  window.openBancoForm = function (id) {
+    const editing = id ? bancos.find(b => b.id === id) : null;
+    const b = editing || { id: uid(), nome: '', percentualComissao: '', logo: '' };
+    const wrap = $('#banco-modal-wrap');
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title">${editing ? 'Editar banco' : 'Novo banco'}</p>
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <img id="bk-logo-preview" src="${b.logo || ''}" class="banco-logo-preview" style="${b.logo ? '' : 'display:none;'}" alt="" />
+          <div>
+            <input type="file" id="bk-logo-file" accept="image/*" />
+            <p class="muted" style="font-size:9.5px; margin-top:4px;">A imagem é redimensionada automaticamente (pequena, tipo selo).</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field field-full"><label>Nome do banco</label><input id="bk-nome" value="${escapeHtml(b.nome)}" /></div>
+          <div class="field"><label>% de comissão</label><input type="number" step="0.01" id="bk-percentual" value="${b.percentualComissao}" /></div>
+        </div>
+        <p id="bk-error" style="font-size:12px; color:var(--ac-red); display:none;"></p>
+        <div class="modal-actions"><button onclick="closeModal('banco-modal-wrap')">Cancelar</button><button onclick="saveBancoForm('${b.id}')">Salvar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+    let pendingLogo = b.logo || '';
+    $('#bk-logo-file').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      pendingLogo = await resizeImageFile(file, 64);
+      $('#bk-logo-preview').src = pendingLogo;
+      $('#bk-logo-preview').style.display = 'inline-block';
+    });
+    window.saveBancoForm = async function (idArg) {
+      const nome = $('#bk-nome').value.trim();
+      if (!nome) { $('#bk-error').textContent = 'INFORME O NOME DO BANCO.'; $('#bk-error').style.display = 'block'; return; }
+      const data = { id: idArg, nome, percentualComissao: $('#bk-percentual').value, logo: pendingLogo };
+      const idx = bancos.findIndex(x => x.id === idArg);
+      if (idx >= 0) bancos[idx] = data; else bancos.push(data);
+      await saveBancos();
+      closeModal('banco-modal-wrap');
+      renderAll();
+    };
+  };
+
+  // ================= RELATÓRIO DE PARCEIRO =================
+  window.openRelatorioParceiro = function (parceiroIdPre) {
+    renderRelatorioParceiro(parceiroIdPre || '');
+  };
+  window.renderRelatorioParceiro = function (parceiroId) {
+    const wrap = $('#relatorio-parceiro-modal-wrap');
+    const rows = parceiroId ? propostas.filter(p => p.parceiroId === parceiroId) : [];
+    const volRows = rows.filter(p => p.contarNoVolume !== false);
+    const fichas = rows.length;
+    const gruposUnicos = new Set(rows.map(p => p.grupoId || p.id)).size;
+    const volumeVenda = volRows.reduce((s, p) => s + (Number(p.valorImovel) || 0), 0);
+    const volumeFinanciamento = volRows.reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
+    const corretores = [...new Set(rows.map(p => p.corretor).filter(Boolean))];
+    const byBanco = {};
+    volRows.forEach(p => { const k = p.banco || 'N/D'; if (!byBanco[k]) byBanco[k] = { qtd: 0, valor: 0 }; byBanco[k].qtd++; byBanco[k].valor += Number(p.valorFinanciado) || 0; });
+
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title"><i class="ti ti-report"></i>Relatório de parceiro</p>
+        <div class="field field-full" style="margin-bottom:14px;">
+          <label>Parceiro / Imobiliária</label>
+          <select id="rp-parceiro" onchange="renderRelatorioParceiro(this.value)">
+            <option value="">Selecione um parceiro</option>
+            ${parceiros.map(pa => `<option value="${pa.id}" ${pa.id === parceiroId ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}
+          </select>
+        </div>
+        ${parceiroId ? `
+          <div class="grid-metrics" style="margin-bottom:16px;">
+            <div class="metric"><p class="metric-label">Fichas passadas</p><p class="metric-value">${fichas}</p></div>
+            <div class="metric"><p class="metric-label">Operações (sem duplicar bancos)</p><p class="metric-value">${gruposUnicos}</p></div>
+            <div class="metric"><p class="metric-label">Volume total de venda</p><p class="metric-value">${fmtMoney(volumeVenda)}</p></div>
+            <div class="metric"><p class="metric-label">Volume total de financiamento</p><p class="metric-value">${fmtMoney(volumeFinanciamento)}</p></div>
+          </div>
+          <p class="card-title" style="font-size:12px;"><i class="ti ti-users"></i>Corretor(es) vinculado(s)</p>
+          <p style="font-size:11.5px; margin:0 0 14px;">${corretores.length ? corretores.map(escapeHtml).join(', ') : '<span class="muted">Nenhum corretor informado nas propostas deste parceiro.</span>'}</p>
+          <p class="card-title" style="font-size:12px;"><i class="ti ti-building-bank"></i>Por banco</p>
+          <div class="table-wrap">
+            <table style="font-size:11.5px;">
+              <thead><tr><th>Banco</th><th>Qtd. propostas</th><th>Valor financiamento</th></tr></thead>
+              <tbody>${Object.keys(byBanco).length ? Object.entries(byBanco).map(([banco, d]) => `<tr><td>${bancoPill(banco)}</td><td>${d.qtd}</td><td>${fmtMoney(d.valor)}</td></tr>`).join('') : `<tr><td class="empty" colspan="3">Nenhuma proposta encontrada para este parceiro.</td></tr>`}</tbody>
+            </table>
+          </div>
+          <div class="modal-actions" style="justify-content:flex-start; margin-top:14px;">
+            <button onclick="openReciboComissao('${parceiroId}')"><i class="ti ti-receipt" style="font-size:12px; margin-right:4px;"></i>Gerar recibo de comissão</button>
+          </div>
+        ` : `<p class="muted" style="font-size:11px;">Selecione um parceiro para ver o relatório.</p>`}
+        <div class="modal-actions"><button onclick="closeModal('relatorio-parceiro-modal-wrap')">Fechar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+
+  // ================= RECIBO DE COMISSÃO =================
+  window.openReciboComissao = function (parceiroId) {
+    const parceiro = parceiros.find(p => p.id === parceiroId);
+    if (!parceiro) return;
+    const wrap = $('#recibo-config-modal-wrap');
+    const hoje = new Date();
+    const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+    wrap.innerHTML = `
+      <div class="modal">
+        <p class="card-title"><i class="ti ti-receipt"></i>Recibo de comissão — ${escapeHtml(parceiro.nome)}</p>
+        <p class="muted" style="font-size:10.5px; margin-top:-6px;">Considera apenas propostas com status funil <b>FINALIZADO</b> deste parceiro, aplicando o % de repasse cadastrado no parceiro (${parceiro.percentualPadrao || 0}%).</p>
+        <div class="form-grid">
+          <div class="field"><label>Competência (mês/ano)</label><input type="month" id="rc-competencia" value="${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}" /></div>
+          <div class="field"><label>Descontos (R$)</label><input type="number" step="0.01" id="rc-descontos" value="0" /></div>
+          <div class="field field-full"><label>Observações</label><input id="rc-observacoes" value="CONFIRMAR BANCO, AGÊNCIA E CONTA PARA DEPÓSITO" /></div>
+        </div>
+        <div class="modal-actions">
+          <button onclick="closeModal('recibo-config-modal-wrap')">Cancelar</button>
+          <button onclick="gerarRecibo('${parceiroId}')"><i class="ti ti-printer" style="font-size:12px; margin-right:4px;"></i>Gerar e imprimir</button>
+        </div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+
+  window.gerarRecibo = async function (parceiroId) {
+    const parceiro = parceiros.find(p => p.id === parceiroId);
+    if (!parceiro) return;
+    const competencia = $('#rc-competencia').value; // AAAA-MM
+    const descontos = Number($('#rc-descontos').value) || 0;
+    const observacoes = $('#rc-observacoes').value.trim();
+    const percentual = Number(parceiro.percentualPadrao) || 0;
+
+    const rows = propostas.filter(p =>
+      p.parceiroId === parceiroId &&
+      p.funil === 'FINALIZADO' &&
+      p.contarNoVolume !== false &&
+      (!competencia || (p.dataEmissao || p.dataCriacao || '').slice(0, 7) === competencia)
+    );
+
+    if (!rows.length) { alert('NENHUMA PROPOSTA FINALIZADA ENCONTRADA PARA ESTE PARCEIRO NA COMPETÊNCIA SELECIONADA.'); return; }
+
+    const porBanco = {};
+    rows.forEach(p => {
+      const banco = p.banco || 'N/D';
+      if (!porBanco[banco]) porBanco[banco] = [];
+      const valor = Number(p.valorFinanciado) || 0;
+      porBanco[banco].push({ cliente: clienteNome(p.clienteId), corretor: p.corretor || '', valor, comissao: valor * percentual / 100 });
+    });
+    let totalComissao = 0;
+    Object.values(porBanco).forEach(list => list.forEach(r => totalComissao += r.comissao));
+    const valorEmitir = totalComissao - descontos;
+
+    const numero = await getNextReciboNumero();
+    const [ano, mes] = competencia.split('-');
+    const competenciaFmt = `${mes}/${ano}`;
+    const dataEmissaoFmt = new Date().toLocaleDateString('pt-BR');
+
+    const bancoBlocosHtml = Object.entries(porBanco).map(([banco, list]) => {
+      const subtotalValor = list.reduce((s, r) => s + r.valor, 0);
+      const subtotalComissao = list.reduce((s, r) => s + r.comissao, 0);
+      return `
+        <table class="recibo-table">
+          <thead><tr><th>NOME CLIENTE</th><th>VALOR FINANCIAMENTO</th><th>%COMISSÃO</th><th>VALOR COMISSÃO</th></tr></thead>
+          <tbody>
+            ${list.map(r => `<tr><td>${escapeHtml(r.cliente)}${r.corretor ? ' (CORR. ' + escapeHtml(r.corretor) + ')' : ''}</td><td>${fmtMoney(r.valor)}</td><td>${percentual.toFixed(2)}%</td><td>${fmtMoney(r.comissao)}</td></tr>`).join('')}
+            <tr class="recibo-subtotal"><td>SUB TOTAL ${escapeHtml(banco)}</td><td>${fmtMoney(subtotalValor)}</td><td></td><td>${fmtMoney(subtotalComissao)}</td></tr>
+          </tbody>
+        </table>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Recibo de comissão — ${escapeHtml(parceiro.nome)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #1B231F; margin: 24px; text-transform: uppercase; }
+        .recibo-header { background: #0A342E; color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .recibo-header .rh-left { font-size: 16px; font-weight: bold; }
+        .recibo-header .rh-right { font-size: 11px; text-align: right; }
+        .recibo-info { display: flex; justify-content: space-between; margin-bottom: 14px; font-size: 11.5px; }
+        table.recibo-table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        table.recibo-table th { background: #A7C4D9; padding: 6px 8px; text-align: left; font-size: 10.5px; border: 1px solid #99a; }
+        table.recibo-table td { padding: 6px 8px; border: 1px solid #ccc; font-size: 11px; }
+        tr.recibo-subtotal td { background: #DCE7F0; font-weight: bold; }
+        .recibo-total-box { display: flex; justify-content: flex-end; margin: 16px 0; }
+        .recibo-total-box table { border-collapse: collapse; }
+        .recibo-total-box td { padding: 6px 14px; font-size: 12px; border: 1px solid #ccc; }
+        .recibo-total-box tr.emitir td { background: #0A342E; color: #fff; font-weight: bold; font-size: 13px; }
+        .recibo-obs { margin-top: 20px; font-size: 11px; color: #A23B32; }
+        .recibo-dados { margin-top: 10px; font-size: 11px; line-height: 1.9; }
+        @media print { .no-print { display: none; } }
+      </style></head>
+      <body>
+        <div class="recibo-header">
+          <div class="rh-left">PARCEIRO<br>${escapeHtml(parceiro.nome)}</div>
+          <div class="rh-right">Nº ${numero}<br>COMPETÊNCIA: ${competenciaFmt}<br>DATA EMISSÃO: ${dataEmissaoFmt}</div>
+        </div>
+        <div class="recibo-info">E-MAIL: ${escapeHtml(parceiro.email || '—')}</div>
+        ${bancoBlocosHtml}
+        <div class="recibo-total-box">
+          <table>
+            <tr><td>TOTAL</td><td>${fmtMoney(totalComissao)}</td></tr>
+            <tr><td>DESCONTOS</td><td>${fmtMoney(descontos)}</td></tr>
+            <tr class="emitir"><td>EMITIR VALOR R$</td><td>${fmtMoney(valorEmitir)}</td></tr>
+          </table>
+        </div>
+        <div class="recibo-obs">OBSERVAÇÕES: ${escapeHtml(observacoes)}</div>
+        <div class="recibo-dados">
+          FAVORECIDO: ${escapeHtml(parceiro.nome)}<br>
+          CNPJ/CPF: ${escapeHtml(parceiro.cnpj || '—')}<br>
+          BANCO: ${escapeHtml(parceiro.bancoDeposito || '—')}<br>
+          AG: ${escapeHtml(parceiro.agencia || '—')}<br>
+          C/C: ${escapeHtml(parceiro.conta || '—')}<br>
+          CHAVE PIX: ${escapeHtml(parceiro.chavePix || '—')}
+        </div>
+        <div class="no-print" style="margin-top:24px;"><button onclick="window.print()" style="padding:10px 18px; font-size:13px;">IMPRIMIR / SALVAR PDF</button></div>
+      </body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => { try { win.focus(); win.print(); } catch (e) { } }, 400);
+    closeModal('recibo-config-modal-wrap');
+  };
+  let reciboSeq = 0;
+  async function getNextReciboNumero() {
+    try {
+      const r = await localdb.get('adtacred:recibo-seq', true);
+      reciboSeq = r && r.value ? parseInt(r.value, 10) || 0 : 0;
+    } catch (e) { /* usa o que já estiver em memória */ }
+    reciboSeq += 1;
+    try { await localdb.set('adtacred:recibo-seq', String(reciboSeq), true); } catch (e) { /* segue mesmo se não salvar o contador */ }
+    return reciboSeq;
+  }
+
+  // ================= FINANCEIRO =================
+  function bancoPercentual(nomeBanco) {
+    const b = bancos.find(x => x.nome === nomeBanco);
+    return b ? Number(b.percentualComissao) || 0 : 0;
+  }
+  function comissaoCalculada(p) {
+    if (p.comissaoValor !== undefined && p.comissaoValor !== '' && p.comissaoValor !== null) return Number(p.comissaoValor);
+    return (Number(p.valorFinanciado) || 0) * bancoPercentual(p.banco) / 100;
+  }
+  window.updateComissaoValor = async function (id, valor) {
+    const p = propostas.find(x => x.id === id);
+    if (p) p.comissaoValor = valor;
+    await savePropostas();
+    renderFinanceiro();
+  };
+  window.updateComissaoData = async function (id, valor) {
+    const p = propostas.find(x => x.id === id);
+    if (p) p.comissaoData = valor;
+    await savePropostas();
+  };
+  let finFilters = { dataDe: '', dataAte: '' };
+  function renderFinFilters() {
+    $('#fin-filters').innerHTML = `
+      <div class="field"><label>Data de emissão (de)</label><input type="date" id="ff-de" value="${finFilters.dataDe}" /></div>
+      <div class="field"><label>Data de emissão (até)</label><input type="date" id="ff-ate" value="${finFilters.dataAte}" /></div>
+      <button onclick="clearFinFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
+    `;
+    $('#ff-de').addEventListener('change', e => { finFilters.dataDe = e.target.value; renderFinanceiro(); });
+    $('#ff-ate').addEventListener('change', e => { finFilters.dataAte = e.target.value; renderFinanceiro(); });
+  }
+  window.clearFinFilters = function () { finFilters = { dataDe: '', dataAte: '' }; renderFinanceiro(); };
+
+  function renderFinanceiro() {
+    renderFinFilters();
+    let emitidas = propostas.filter(p => p.emitido);
+    if (finFilters.dataDe) emitidas = emitidas.filter(p => p.dataEmissao && p.dataEmissao >= finFilters.dataDe);
+    if (finFilters.dataAte) emitidas = emitidas.filter(p => p.dataEmissao && p.dataEmissao <= finFilters.dataAte);
+
+    const totalFinanciado = emitidas.reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
+    const totalComissao = emitidas.reduce((s, p) => s + comissaoCalculada(p), 0);
+    const totalRecebido = emitidas.filter(p => p.comissaoData).reduce((s, p) => s + comissaoCalculada(p), 0);
+    const totalAReceber = totalComissao - totalRecebido;
+    $('#fin-metrics').innerHTML = `
+      <div class="metric"><p class="metric-label">Propostas emitidas</p><p class="metric-value">${emitidas.length}</p></div>
+      <div class="metric"><p class="metric-label">Valor financiado emitido</p><p class="metric-value">${fmtMoney(totalFinanciado)}</p></div>
+      <div class="metric"><p class="metric-label">Comissão total prevista</p><p class="metric-value">${fmtMoney(totalComissao)}</p></div>
+      <div class="metric"><p class="metric-label">Comissão a receber</p><p class="metric-value">${fmtMoney(totalAReceber)}</p></div>
+    `;
+    const tbl = $('#fin-table');
+    tbl.innerHTML = emitidas.length
+      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Data emissão</th><th>Valor financiado</th><th>% comissão</th><th>Valor comissão</th><th>Data recebimento</th></tr></thead>
+        <tbody>${emitidas.map(p => `<tr>
+          <td>${escapeHtml(clienteNome(p.clienteId))}</td>
+          <td>${bancoPill(p.banco)}</td>
+          <td>${fmtDate(p.dataEmissao)}</td>
+          <td>${fmtMoney(p.valorFinanciado)}</td>
+          <td>${bancoPercentual(p.banco)}%</td>
+          <td><input type="number" step="0.01" style="width:110px; height:28px;" value="${p.comissaoValor != null ? p.comissaoValor : comissaoCalculada(p).toFixed(2)}" onchange="updateComissaoValor('${p.id}', this.value)" /></td>
+          <td><input type="date" style="width:140px; height:28px;" value="${p.comissaoData || ''}" onchange="updateComissaoData('${p.id}', this.value)" /></td>
+        </tr>`).join('')}</tbody>`
+      : `<tr><td class="empty">Nenhuma proposta emitida encontrada para o período.</td></tr>`;
+
+    const emProducao = propostas.filter(p => p.funil === 'PRODUÇÃO' && !p.emitido);
+    const estTbl = $('#fin-estimativa-table');
+    estTbl.innerHTML = emProducao.length
+      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Valor financiado</th><th>% comissão</th><th>Comissão estimada</th></tr></thead>
+        <tbody>${emProducao.map(p => `<tr><td>${escapeHtml(clienteNome(p.clienteId))}</td><td>${bancoPill(p.banco)}</td><td>${fmtMoney(p.valorFinanciado)}</td><td>${bancoPercentual(p.banco)}%</td><td>${fmtMoney(comissaoCalculada(p))}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td colspan="4" style="text-align:right; font-weight:600;">Total estimado:</td><td style="font-weight:600;">${fmtMoney(emProducao.reduce((s, p) => s + comissaoCalculada(p), 0))}</td></tr></tfoot>`
+      : `<tr><td class="empty">Nenhuma proposta em produção no momento.</td></tr>`;
+  }
+
+  // ================= IMPORT CSV =================
+  const BANCO_MAP = { SANTANDER: 'SANTANDER', ITAU: 'ITAÚ', ITAÚ: 'ITAÚ', BRADESCO: 'BRADESCO', INTER: 'INTER', CAIXA: 'CAIXA' };
+  const FUNIL_MAP = { FINALIZADO: 'FINALIZADO', REPROVADO: 'REPROVADO', APROVADO: 'APROVADO', 'PRODUÇÃO': 'PRODUÇÃO', EFETIVADO: 'EFETIVADO' };
+
+  function parseCSV(text) {
+    const rows = []; let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i], next = text[i + 1];
+      if (inQuotes) { if (ch === '"' && next === '"') { field += '"'; i++; } else if (ch === '"') { inQuotes = false; } else { field += ch; } }
+      else { if (ch === '"') inQuotes = true; else if (ch === ',') { row.push(field); field = ''; } else if (ch === '\r') { } else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; } else field += ch; }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    if (!rows.length) return [];
+    const header = rows[0].map(h => h.trim().toUpperCase());
+    return rows.slice(1).filter(r => r.some(c => c && c.trim())).map(r => { const obj = {}; header.forEach((h, idx) => { obj[h] = (r[idx] || '').trim(); }); return obj; });
+  }
+  function parseBRNumber(s) {
+    if (!s) return 0;
+    const clean = String(s).replace(/[^\d,.-]/g, '').trim();
+    if (!clean) return 0;
+    const n = parseFloat(clean.replace(/\./g, '').replace(',', '.'));
+    return isNaN(n) ? 0 : n;
+  }
+  function parseBRDate(s) {
+    if (!s) return '';
+    const m = String(s).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+  }
+  function findOrCreateByName(list, name, makeNew) {
+    const key = name.trim().toLowerCase();
+    if (!key) return null;
+    let item = list.find(x => x.nome.trim().toLowerCase() === key);
+    if (!item) { item = makeNew(name.trim()); list.push(item); }
+    return item;
+  }
+  $('#import-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const summaryEl = $('#import-summary');
+    summaryEl.innerHTML = `<p class="muted" style="font-size:12px;">Lendo arquivo…</p>`;
+    const text = await file.text();
+    const records = parseCSV(text);
+    if (!records.length) { summaryEl.innerHTML = `<p style="font-size:12px; color:var(--ac-red);">Não consegui ler linhas válidas neste arquivo.</p>`; return; }
+
+    let novosClientes = 0, novosParceiros = 0, novasPropostas = 0, jaExistentes = 0;
+    const existingKeys = new Set(propostas.map(p => p.importKey).filter(Boolean));
+
+    records.forEach(r => {
+      const compradorNome = r['COMPRADOR'] || '';
+      const parceiroNome = r['PARCEIRO'] || '';
+      if (!compradorNome) return;
+      const cliente = findOrCreateByName(clientes, compradorNome, nome => { novosClientes++; return { id: uid(), nome, cpf: '', telefone: '', email: '', renda: '', observacao: '' }; });
+      let parceiro = null;
+      if (parceiroNome) parceiro = findOrCreateByName(parceiros, parceiroNome, nome => { novosParceiros++; return { id: uid(), nome, tipo: 'Imobiliária', contato: '', percentualPadrao: '' }; });
+
+      const dataCriacao = parseBRDate(r['DATA']) || new Date().toISOString().slice(0, 10);
+      const numeroProposta = r['PROPOSTA'] || '';
+      const bancoRaw = (r['BANCO'] || '').toUpperCase();
+      const banco = BANCO_MAP[bancoRaw] || (r['BANCO'] || 'OUTRO');
+      const importKey = [dataCriacao, compradorNome.trim().toLowerCase(), banco, numeroProposta].join('|');
+      if (existingKeys.has(importKey)) { jaExistentes++; return; }
+      existingKeys.add(importKey);
+
+      const funilRaw = (r['FUNIL'] || '').toUpperCase();
+      const funil = FUNIL_MAP[funilRaw] || 'ANÁLISE DE CRÉDITO';
+      const statusRaw = (r['STATUS'] || '').toUpperCase();
+      const status = statusRaw.includes('INATIVO') ? 'INATIVO' : 'ATIVO';
+      const empresaRaw = (r['EMPRESA'] || '').toUpperCase();
+      const plataforma = PLATAFORMAS.includes(empresaRaw) ? empresaRaw : '';
+
+      propostas.push({
+        id: uid(), importKey, clienteId: cliente.id, parceiroId: parceiro ? parceiro.id : '',
+        corretor: r['CORRETOR'] || '', banco, plataforma, numeroProposta, funil, status,
+        dataCriacao, dataFollowUp: parseBRDate(r['DTA FALOW UP']), observacao: r['OBSERVAÇÃO'] || '',
+        valorImovel: parseBRNumber(r['VLR IMOVEL']), fgts: parseBRNumber(r['FGTS']), valorFinanciado: parseBRNumber(r['VALOR FIN']),
+        valorAvaliacaoBanco: parseBRNumber(r['VALOR AVALIADO']), itbi: parseBRNumber(r['ITBI']),
+        prazoAcordado: '', taxaAcordada: '', valorIQ: parseBRNumber(r['VALOR IQ']),
+      });
+      novasPropostas++;
+    });
+
+    await saveClientes(); await saveParceiros(); await savePropostas();
+    renderAll();
+    summaryEl.innerHTML = `<div style="background:var(--ac-green-tint); color:var(--ac-green); border-radius:var(--ac-radius); padding:10px 14px; font-size:12px;"><i class="ti ti-check" style="vertical-align:-2px; margin-right:6px;"></i>Importação concluída: ${novasPropostas} proposta(s) nova(s), ${novosClientes} cliente(s) novo(s), ${novosParceiros} parceiro(s) novo(s)${jaExistentes ? `, ${jaExistentes} já existente(s) ignorada(s)` : ''}.</div>`;
+    e.target.value = '';
+  });
+
+  // ================= BACKUP =================
+  window.exportBackup = function () {
+    const data = { clientes, parceiros, propostas, kanbanEtapas, solicitacoes, bancosComissao, exportadoEm: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'adtacred-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  $('#backup-file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const summaryEl = $('#backup-summary');
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      clientes = data.clientes || clientes;
+      parceiros = data.parceiros || parceiros;
+      propostas = data.propostas || propostas;
+      kanbanEtapas = data.kanbanEtapas || kanbanEtapas;
+      solicitacoes = data.solicitacoes || solicitacoes;
+      bancosComissao = data.bancosComissao || bancosComissao;
+      await saveClientes(); await saveParceiros(); await savePropostas(); await saveEtapas(); await saveSolicitacoes(); await saveBancosComissao();
+      renderAll();
+      summaryEl.innerHTML = `<div style="background:var(--ac-green-tint); color:var(--ac-green); border-radius:var(--ac-radius); padding:10px 14px; font-size:12px;"><i class="ti ti-check" style="margin-right:6px;"></i>Backup restaurado com sucesso.</div>`;
+    } catch (err) {
+      summaryEl.innerHTML = `<p style="font-size:12px; color:var(--ac-red);">Arquivo de backup inválido.</p>`;
+    }
+    e.target.value = '';
+  });
+
+  // ================= MODAL / THEME =================
+  window.closeModal = function (wrapId) { const wrap = document.getElementById(wrapId); wrap.classList.remove('open'); wrap.innerHTML = ''; };
+  window.setTheme = async function (t) {
+    document.getElementById('app').setAttribute('data-theme', t);
+    $('#theme-light-btn').classList.toggle('active', t === 'light');
+    $('#theme-dark-btn').classList.toggle('active', t === 'dark');
+    try { await localdb.set('adtacred:theme', t, false); } catch (e) { }
+  };
+  async function loadTheme() {
+    let t = 'light';
+    try { const r = await localdb.get('adtacred:theme', false); if (r && r.value) t = r.value; } catch (e) { }
+    setTheme(t);
+  }
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .ac-main input, .ac-main select, .ac-main textarea { height:36px; border-radius:var(--ac-radius); border:1px solid var(--ac-border-strong); background:var(--ac-surface); padding:0 10px; font-family:inherit; font-size:12px; color:var(--ac-text); width:100%; text-transform:uppercase; }
+    .ac-main textarea { height:auto; padding:8px 10px; }
+    .ac-main input:focus, .ac-main select:focus, .ac-main textarea:focus { outline:none; border-color:var(--ac-primary); box-shadow:0 0 0 2px var(--ac-primary-tint); }
+    .ac-main button { height:36px; padding:0 14px; border-radius:var(--ac-radius); border:1px solid var(--ac-primary); background:var(--ac-primary); color:#fff; font-size:12px; font-weight:500; cursor:pointer; }
+    .ac-main button:hover { background:var(--ac-primary-dark); }
+    .modal-actions button:first-child { background:transparent; color:var(--ac-text-soft); border-color:var(--ac-border-strong); }
+    .modal-actions button:first-child:hover { background:var(--ac-surface-alt); }
+    .icon-btn { background:var(--ac-surface) !important; border-color:var(--ac-border-strong) !important; color:var(--ac-text-soft) !important; }
+    #public-form-wrap input, #public-form-wrap select { height:36px; border-radius:var(--ac-radius); border:1px solid var(--ac-border-strong); background:var(--ac-surface); padding:0 10px; font-family:inherit; font-size:12px; color:var(--ac-text); width:100%; text-transform:uppercase; }
+    #public-form-wrap button { height:40px; padding:0 14px; border-radius:var(--ac-radius); border:1px solid var(--ac-primary); background:var(--ac-primary); color:#fff; font-size:12px; font-weight:500; cursor:pointer; }
+  `;
+  document.head.appendChild(style);
+
+  function renderAll() {
+    renderDashboard();
+    renderPropostas();
+    renderKanban();
+    renderSolicitacoes();
+    renderClientes();
+    renderParceiros();
+    renderBancos();
+    renderFinanceiro();
+  }
+
+  // ================= NOTIFICAÇÃO DE NOVA SOLICITAÇÃO =================
+  function showToast(msg, onClick) {
+    const el = document.createElement('div');
+    el.className = 'ac-toast';
+    el.innerHTML = `<i class="ti ti-bell-ringing"></i><span>${escapeHtml(msg)}</span>`;
+    if (onClick) el.addEventListener('click', onClick);
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 8000);
+  }
+  let knownSolicitacaoIds = new Set();
+  async function checkNewSolicitacoes(silent) {
+    if (!localdb.usingRemote) return;
+    try {
+      const r = await localdb.get('adtacred:solicitacoes', true);
+      const list = r && r.value ? JSON.parse(r.value) : [];
+      const newOnes = list.filter(s => !knownSolicitacaoIds.has(s.id));
+      if (!silent && newOnes.length && knownSolicitacaoIds.size > 0) {
+        newOnes.forEach(s => showToast(`Novo formulário às ${new Date(s.criadoEm).toLocaleTimeString('pt-BR')}: ${s.nome}`, () => {
+          $$('.tab').forEach(t => t.classList.remove('active'));
+          $$('.view').forEach(v => v.classList.remove('active'));
+          $('.tab[data-tab="solicitacoes"]').classList.add('active');
+          $('#view-solicitacoes').classList.add('active');
+        }));
+        solicitacoes = list;
+        renderSolicitacoes();
+        renderDashboard();
+      } else if (list.length !== solicitacoes.length) {
+        solicitacoes = list;
+      }
+      knownSolicitacaoIds = new Set(list.map(s => s.id));
+    } catch (e) { /* silencioso — próxima checagem tenta de novo */ }
+  }
+
+  loadTheme();
+  loadAll().then(() => { checkNewSolicitacoes(true); setInterval(() => checkNewSolicitacoes(false), 30000); });
+})();
+</script>
+</body>
+</html>

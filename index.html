@@ -312,6 +312,7 @@
       <h2>CRM Kanban</h2>
       <div style="display:flex; gap:8px;">
         <button onclick="openEtapaManager()"><i class="ti ti-settings" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Gerenciar etapas</button>
+        <button onclick="openTempoMedioReal()"><i class="ti ti-clock-hour-4" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Tempo médio real</button>
         <button onclick="openAddToKanban()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Adicionar proposta</button>
       </div>
     </div>
@@ -420,6 +421,8 @@
 
 <div class="modal-bg overlay-modal-bg" id="relatorio-parceiro-modal-wrap"></div>
 <div class="modal-bg overlay-modal-bg" id="recibo-config-modal-wrap"></div>
+<div class="modal-bg overlay-modal-bg" id="timeline-modal-wrap"></div>
+<div class="modal-bg overlay-modal-bg" id="tempo-medio-modal-wrap"></div>
 
 <!-- FORMULÁRIO PÚBLICO -->
 <div id="public-form-wrap">
@@ -1368,6 +1371,7 @@
             <td class="row-actions">
               <button class="icon-btn" onclick="openProposalForm('${principal.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
               <button class="icon-btn" onclick="copyProposal('${principal.id}')" title="Copiar proposta (ex: mesma proposta em outro banco)"><i class="ti ti-copy" style="font-size:12px;"></i>Copiar</button>
+              <button class="icon-btn" onclick="openTimeline('${principal.id}')" title="Timeline do processo"><i class="ti ti-timeline-event" style="font-size:12px;"></i></button>
               <button class="icon-btn danger" onclick="deleteProposal('${principal.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
             </td>
           </tr>`; }).join('')}</tbody>`
@@ -1546,7 +1550,7 @@
     wrap.innerHTML = `
       <div class="modal">
         <p class="card-title">${editing ? 'Editar proposta' : 'Nova proposta'}</p>
-        ${editing && p.kanbanEtapaId ? `<p class="muted" style="font-size:10.5px; margin-top:-8px; margin-bottom:10px;"><i class="ti ti-layout-kanban" style="font-size:12px; vertical-align:-2px;"></i> Etapa atual no Kanban: ${kanbanEtapaBadge(p.kanbanEtapaId)}</p>` : ''}
+        ${editing && p.kanbanEtapaId ? `<p class="muted" style="font-size:10.5px; margin-top:-8px; margin-bottom:10px;"><i class="ti ti-layout-kanban" style="font-size:12px; vertical-align:-2px;"></i> Etapa atual no Kanban: ${kanbanEtapaBadge(p.kanbanEtapaId)} &nbsp; <a href="#" onclick="openTimeline('${p.id}'); return false;" style="font-size:10.5px;">Ver timeline</a></p>` : ''}
         <div class="form-grid">
           <div class="field field-full" style="position:relative;">
             <label>Cliente</label>
@@ -2319,6 +2323,77 @@
           </div>
         ` : `<p class="muted" style="font-size:11px;">Selecione um parceiro para ver o relatório.</p>`}
         <div class="modal-actions"><button onclick="closeModal('relatorio-parceiro-modal-wrap')">Fechar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+
+  // ================= TIMELINE DO PROCESSO =================
+  window.openTimeline = function (id) {
+    const p = propostas.find(x => x.id === id);
+    if (!p) return;
+    const wrap = $('#timeline-modal-wrap');
+    const history = p.kanbanHistory && p.kanbanHistory.length ? p.kanbanHistory : (p.kanbanEtapaId ? [{ etapaId: p.kanbanEtapaId, enteredAt: p.kanbanEnteredAt || p.kanbanStartedAt || '', exitedAt: '' }] : []);
+    const totalDias = p.kanbanStartedAt ? daysSince(p.kanbanStartedAt) : null;
+    wrap.innerHTML = `
+      <div class="modal" style="max-width:560px;">
+        <p class="card-title"><i class="ti ti-timeline-event"></i>Timeline — ${escapeHtml(clienteNome(p.clienteId))}</p>
+        <p class="muted" style="font-size:10.5px; margin-top:-6px;">${bancoPill(p.banco)} · ${totalDias === null ? 'Ainda não entrou no kanban' : 'Tempo total no processo: ' + totalDias + ' dia(s)'}</p>
+        ${history.length ? `
+          <div style="margin-top:14px;">
+            ${history.map((h, i) => {
+              const et = kanbanEtapas.find(e => e.id === h.etapaId);
+              const nome = et ? et.nome : 'Etapa removida';
+              const cor = et ? et.cor : '#999';
+              const dias = h.exitedAt ? Math.round((new Date(h.exitedAt) - new Date(h.enteredAt)) / 86400000) : daysSince(h.enteredAt);
+              const statusTxt = h.exitedAt ? `${fmtDate(h.enteredAt)} → ${fmtDate(h.exitedAt)}` : `${fmtDate(h.enteredAt)} → em andamento`;
+              return `
+              <div style="display:flex; gap:10px; margin-bottom:${i === history.length - 1 ? 0 : 16}px;">
+                <div style="display:flex; flex-direction:column; align-items:center;">
+                  <span style="width:12px; height:12px; border-radius:50%; background:${cor}; flex-shrink:0;"></span>
+                  ${i < history.length - 1 ? `<span style="width:2px; flex:1; background:var(--ac-border); margin-top:2px;"></span>` : ''}
+                </div>
+                <div style="padding-bottom:4px;">
+                  <p style="font-size:12px; font-weight:600; margin:0 0 2px; color:var(--ac-heading);">${escapeHtml(nome)}${!h.exitedAt ? ' <span class="badge badge-blue" style="margin-left:4px;">ATUAL</span>' : ''}</p>
+                  <p style="font-size:10.5px; color:var(--ac-text-soft); margin:0;">${statusTxt} — ${dias === null ? '—' : dias + ' dia(s)'}</p>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>
+        ` : `<p class="muted" style="font-size:11px; margin-top:12px;">Esta proposta ainda não entrou no CRM Kanban.</p>`}
+        <div class="modal-actions"><button onclick="closeModal('timeline-modal-wrap')">Fechar</button></div>
+      </div>`;
+    wrap.classList.add('open');
+  };
+
+  window.openTempoMedioReal = function () {
+    const wrap = $('#tempo-medio-modal-wrap');
+    const porEtapa = {};
+    kanbanEtapas.forEach(et => { porEtapa[et.id] = { nome: et.nome, cor: et.cor, tempos: [], configurado: Number(et.tempoMedioDias) || 0 }; });
+    propostas.forEach(p => {
+      (p.kanbanHistory || []).forEach(h => {
+        if (h.exitedAt && porEtapa[h.etapaId]) {
+          const dias = Math.round((new Date(h.exitedAt) - new Date(h.enteredAt)) / 86400000);
+          if (dias >= 0) porEtapa[h.etapaId].tempos.push(dias);
+        }
+      });
+    });
+    const linhas = Object.values(porEtapa).map(e => ({ ...e, media: e.tempos.length ? (e.tempos.reduce((s, d) => s + d, 0) / e.tempos.length) : null, qtd: e.tempos.length }));
+    wrap.innerHTML = `
+      <div class="modal" style="max-width:600px;">
+        <p class="card-title"><i class="ti ti-clock-hour-4"></i>Tempo médio real por etapa</p>
+        <p class="muted" style="font-size:10.5px; margin-top:-6px;">Calculado a partir das passagens já concluídas (entrada → saída de cada etapa) de todas as propostas.</p>
+        <div class="table-wrap" style="margin-top:10px;">
+          <table style="font-size:11.5px;">
+            <thead><tr><th>Etapa</th><th>Tempo médio real</th><th>Passagens consideradas</th><th>Tempo médio configurado</th></tr></thead>
+            <tbody>${linhas.length ? linhas.map(l => `<tr>
+              <td><span class="badge" style="background:${l.cor}; color:#fff;">${escapeHtml(l.nome)}</span></td>
+              <td>${l.media === null ? '<span class="muted">sem dados ainda</span>' : l.media.toFixed(1) + ' dia(s)'}</td>
+              <td>${l.qtd}</td>
+              <td>${l.configurado ? l.configurado + ' dia(s)' : '<span class="muted">não definido</span>'}</td>
+            </tr>`).join('') : `<tr><td class="empty" colspan="4">Nenhuma etapa cadastrada ainda.</td></tr>`}</tbody>
+          </table>
+        </div>
+        <div class="modal-actions"><button onclick="closeModal('tempo-medio-modal-wrap')">Fechar</button></div>
       </div>`;
     wrap.classList.add('open');
   };

@@ -2335,27 +2335,29 @@
     const history = p.kanbanHistory && p.kanbanHistory.length ? p.kanbanHistory : (p.kanbanEtapaId ? [{ etapaId: p.kanbanEtapaId, enteredAt: p.kanbanEnteredAt || p.kanbanStartedAt || '', exitedAt: '' }] : []);
     const totalDias = p.kanbanStartedAt ? daysSince(p.kanbanStartedAt) : null;
     wrap.innerHTML = `
-      <div class="modal" style="max-width:560px;">
+      <div class="modal" style="max-width:920px;">
         <p class="card-title"><i class="ti ti-timeline-event"></i>Timeline — ${escapeHtml(clienteNome(p.clienteId))}</p>
         <p class="muted" style="font-size:10.5px; margin-top:-6px;">${bancoPill(p.banco)} · ${totalDias === null ? 'Ainda não entrou no kanban' : 'Tempo total no processo: ' + totalDias + ' dia(s)'}</p>
+        <p class="muted" style="font-size:9.5px; margin-top:2px;">As datas de cada etapa podem ser ajustadas manualmente abaixo.</p>
         ${history.length ? `
-          <div style="margin-top:14px;">
+          <div id="timeline-track" style="display:flex; align-items:flex-start; overflow-x:auto; padding:16px 4px;">
             ${history.map((h, i) => {
               const et = kanbanEtapas.find(e => e.id === h.etapaId);
               const nome = et ? et.nome : 'Etapa removida';
               const cor = et ? et.cor : '#999';
               const dias = h.exitedAt ? Math.round((new Date(h.exitedAt) - new Date(h.enteredAt)) / 86400000) : daysSince(h.enteredAt);
-              const statusTxt = h.exitedAt ? `${fmtDate(h.enteredAt)} → ${fmtDate(h.exitedAt)}` : `${fmtDate(h.enteredAt)} → em andamento`;
               return `
-              <div style="display:flex; gap:10px; margin-bottom:${i === history.length - 1 ? 0 : 16}px;">
-                <div style="display:flex; flex-direction:column; align-items:center;">
-                  <span style="width:12px; height:12px; border-radius:50%; background:${cor}; flex-shrink:0;"></span>
-                  ${i < history.length - 1 ? `<span style="width:2px; flex:1; background:var(--ac-border); margin-top:2px;"></span>` : ''}
+              <div style="display:flex; align-items:flex-start; flex-shrink:0;">
+                <div style="min-width:168px; text-align:center;">
+                  <div style="width:14px; height:14px; border-radius:50%; background:${cor}; margin:0 auto 8px;"></div>
+                  <p style="font-size:11px; font-weight:600; margin:0 0 6px; color:var(--ac-heading);">${escapeHtml(nome)}${!h.exitedAt ? '<br><span class="badge badge-blue" style="margin-top:3px; display:inline-block;">ATUAL</span>' : ''}</p>
+                  <label style="font-size:9px; color:var(--ac-text-soft); display:block; margin-bottom:2px;">Entrada</label>
+                  <input type="date" value="${h.enteredAt || ''}" style="height:28px; font-size:10px; padding:0 6px;" onchange="updateTimelineEntry('${p.id}', ${i}, 'enteredAt', this.value)" />
+                  <label style="font-size:9px; color:var(--ac-text-soft); display:block; margin:6px 0 2px;">Saída</label>
+                  <input type="date" value="${h.exitedAt || ''}" style="height:28px; font-size:10px; padding:0 6px;" onchange="updateTimelineEntry('${p.id}', ${i}, 'exitedAt', this.value)" />
+                  <p style="font-size:9.5px; color:var(--ac-text-muted); margin-top:6px;">${dias === null ? '—' : dias + ' dia(s)'}</p>
                 </div>
-                <div style="padding-bottom:4px;">
-                  <p style="font-size:12px; font-weight:600; margin:0 0 2px; color:var(--ac-heading);">${escapeHtml(nome)}${!h.exitedAt ? ' <span class="badge badge-blue" style="margin-left:4px;">ATUAL</span>' : ''}</p>
-                  <p style="font-size:10.5px; color:var(--ac-text-soft); margin:0;">${statusTxt} — ${dias === null ? '—' : dias + ' dia(s)'}</p>
-                </div>
+                ${i < history.length - 1 ? `<div style="width:36px; height:2px; background:var(--ac-border-strong); margin-top:7px;"></div>` : ''}
               </div>`;
             }).join('')}
           </div>
@@ -2363,6 +2365,18 @@
         <div class="modal-actions"><button onclick="closeModal('timeline-modal-wrap')">Fechar</button></div>
       </div>`;
     wrap.classList.add('open');
+  };
+  window.updateTimelineEntry = async function (proposalId, index, field, value) {
+    const p = propostas.find(x => x.id === proposalId);
+    if (!p || !p.kanbanHistory || !p.kanbanHistory[index]) return;
+    p.kanbanHistory[index][field] = value;
+    // mantém a data de início total e a data da etapa atual em sincronia com o histórico editado
+    p.kanbanStartedAt = p.kanbanHistory[0].enteredAt || p.kanbanStartedAt;
+    const ultima = p.kanbanHistory[p.kanbanHistory.length - 1];
+    if (ultima && !ultima.exitedAt) p.kanbanEnteredAt = ultima.enteredAt || p.kanbanEnteredAt;
+    await savePropostas();
+    openTimeline(proposalId);
+    renderKanban();
   };
 
   window.openTempoMedioReal = function () {
@@ -2733,7 +2747,7 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .ac-main input, .ac-main select, .ac-main textarea { height:36px; border-radius:var(--ac-radius); border:1px solid var(--ac-border-strong); background:var(--ac-surface); padding:0 10px; font-family:inherit; font-size:12px; color:var(--ac-text); width:100%; text-transform:uppercase; }
+    .ac-main input, .ac-main select, .ac-main textarea, .overlay-modal-bg input, .overlay-modal-bg select, .overlay-modal-bg textarea { height:36px; border-radius:var(--ac-radius); border:1px solid var(--ac-border-strong); background:var(--ac-surface); padding:0 10px; font-family:inherit; font-size:12px; color:var(--ac-text); width:100%; text-transform:uppercase; }
     .ac-main textarea { height:auto; padding:8px 10px; }
     .ac-main input:focus, .ac-main select:focus, .ac-main textarea:focus { outline:none; border-color:var(--ac-primary); box-shadow:0 0 0 2px var(--ac-primary-tint); }
     .ac-main button { height:36px; padding:0 14px; border-radius:var(--ac-radius); border:1px solid var(--ac-primary); background:var(--ac-primary); color:#fff; font-size:12px; font-weight:500; cursor:pointer; }

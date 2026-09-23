@@ -2340,7 +2340,8 @@
       <div class="modal" style="max-width:920px;">
         <p class="card-title"><i class="ti ti-timeline-event"></i>Timeline — ${escapeHtml(clienteNome(p.clienteId))}</p>
         <p class="muted" style="font-size:10.5px; margin-top:-6px;">${bancoPill(p.banco)} · ${totalDias === null ? 'Ainda não entrou no kanban' : 'Tempo total no processo: ' + totalDias + ' dia(s)'}</p>
-        <p class="muted" style="font-size:9.5px; margin-top:2px;">As datas de cada etapa podem ser ajustadas manualmente abaixo.</p>
+        ${p.emitido && p.dataEmissao && p.kanbanStartedAt ? `<p style="font-size:11px; font-weight:600; color:var(--ac-green); margin:4px 0 0;"><i class="ti ti-certificate" style="font-size:13px; vertical-align:-2px;"></i> Emitido em ${fmtDate(p.dataEmissao)} — ${Math.round((new Date(p.dataEmissao) - new Date(p.kanbanStartedAt)) / 86400000)} dia(s) desde o início do processo</p>` : ''}
+        <p class="muted" style="font-size:9.5px; margin-top:2px;">As datas de cada etapa podem ser ajustadas manualmente abaixo — a saída de uma etapa já preenche a entrada da próxima.</p>
         ${history.length ? `
           <div id="timeline-track" style="display:flex; align-items:flex-start; overflow-x:auto; padding:16px 4px;">
             ${history.map((h, i) => {
@@ -2372,6 +2373,13 @@
     const p = propostas.find(x => x.id === proposalId);
     if (!p || !p.kanbanHistory || !p.kanbanHistory[index]) return;
     p.kanbanHistory[index][field] = value;
+    // a data final de uma etapa vira automaticamente a data inicial da próxima (e vice-versa), pra não digitar duas vezes
+    if (field === 'exitedAt' && p.kanbanHistory[index + 1]) {
+      p.kanbanHistory[index + 1].enteredAt = value;
+    }
+    if (field === 'enteredAt' && index > 0 && p.kanbanHistory[index - 1]) {
+      p.kanbanHistory[index - 1].exitedAt = value;
+    }
     // mantém a data de início total e a data da etapa atual em sincronia com o histórico editado
     p.kanbanStartedAt = p.kanbanHistory[0].enteredAt || p.kanbanStartedAt;
     const ultima = p.kanbanHistory[p.kanbanHistory.length - 1];
@@ -2394,6 +2402,13 @@
       });
     });
     const linhas = Object.values(porEtapa).map(e => ({ ...e, media: e.tempos.length ? (e.tempos.reduce((s, d) => s + d, 0) / e.tempos.length) : null, qtd: e.tempos.length }));
+
+    const temposEmissao = propostas
+      .filter(p => p.emitido && p.dataEmissao && p.kanbanStartedAt)
+      .map(p => Math.round((new Date(p.dataEmissao) - new Date(p.kanbanStartedAt)) / 86400000))
+      .filter(d => d >= 0);
+    const mediaEmissao = temposEmissao.length ? (temposEmissao.reduce((s, d) => s + d, 0) / temposEmissao.length) : null;
+
     wrap.innerHTML = `
       <div class="modal" style="max-width:600px;">
         <p class="card-title"><i class="ti ti-clock-hour-4"></i>Tempo médio real por etapa</p>
@@ -2408,6 +2423,11 @@
               <td>${l.configurado ? l.configurado + ' dia(s)' : '<span class="muted">não definido</span>'}</td>
             </tr>`).join('') : `<tr><td class="empty" colspan="4">Nenhuma etapa cadastrada ainda.</td></tr>`}</tbody>
           </table>
+        </div>
+        <div class="metric" style="margin-top:14px; max-width:280px;">
+          <p class="metric-label"><i class="ti ti-certificate" style="font-size:12px; vertical-align:-2px;"></i> Tempo médio até a emissão</p>
+          <p class="metric-value">${mediaEmissao === null ? '—' : mediaEmissao.toFixed(1) + ' dia(s)'}</p>
+          <p class="metric-sub">${temposEmissao.length} proposta(s) emitida(s) consideradas</p>
         </div>
         <div class="modal-actions"><button onclick="closeModal('tempo-medio-modal-wrap')">Fechar</button></div>
       </div>`;

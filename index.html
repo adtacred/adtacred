@@ -384,7 +384,8 @@
       <div class="table-wrap"><table id="fin-estimativa-table"></table></div>
     </div>
     <div class="card">
-      <p class="card-title"><i class="ti ti-report-money"></i>Propostas emitidas &middot; comissão a receber</p>
+      <p class="card-title"><i class="ti ti-report-money"></i>Propostas emitidas &middot; bruto, impostos, parceiro e líquido</p>
+      <p class="muted" style="font-size:10.5px; margin-top:-4px;">Marque "Pagar parceiro" nas propostas em que o repasse deve ser descontado do valor líquido.</p>
       <div class="table-wrap"><table id="fin-table"></table></div>
     </div>
   </div>
@@ -773,6 +774,7 @@
   let solicitacoes = [];
   let bancosComissao = [];
   let bancos = [];
+  let aliquotaImposto = 0;
   let reciboSeq = 0;
 
   let propPage = 1;
@@ -989,7 +991,7 @@
         : 'Os dados ficam salvos neste navegador (local, sem nuvem, sem custo) — fechar e abrir o arquivo não apaga nada, mas não são compartilhados entre dispositivos/navegadores diferentes. Configure a Planilha Google para acesso compartilhado.';
     }
     try {
-      const keys = ['adtacred:clientes', 'adtacred:propostas', 'adtacred:parceiros', 'adtacred:kanban-etapas', 'adtacred:solicitacoes', 'adtacred:bancos-comissao', 'adtacred:bancos', 'adtacred:recibo-seq'];
+      const keys = ['adtacred:clientes', 'adtacred:propostas', 'adtacred:parceiros', 'adtacred:kanban-etapas', 'adtacred:solicitacoes', 'adtacred:bancos-comissao', 'adtacred:bancos', 'adtacred:recibo-seq', 'adtacred:aliquota-imposto'];
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 25000));
       const r = await Promise.race([localdb.getMany(keys), timeoutPromise]); // uma única chamada pro Google (com plano B); nunca trava pra sempre
       clientes = r['adtacred:clientes'] && r['adtacred:clientes'].value ? JSON.parse(r['adtacred:clientes'].value) : [];
@@ -1000,6 +1002,7 @@
       bancosComissao = r['adtacred:bancos-comissao'] && r['adtacred:bancos-comissao'].value ? JSON.parse(r['adtacred:bancos-comissao'].value) : [];
       bancos = r['adtacred:bancos'] && r['adtacred:bancos'].value ? JSON.parse(r['adtacred:bancos'].value) : [];
       reciboSeq = r['adtacred:recibo-seq'] && r['adtacred:recibo-seq'].value ? parseInt(r['adtacred:recibo-seq'].value, 10) || 0 : 0;
+      aliquotaImposto = r['adtacred:aliquota-imposto'] && r['adtacred:aliquota-imposto'].value ? parseFloat(r['adtacred:aliquota-imposto'].value) || 0 : 0;
       if (!bancos.length) {
         // primeira vez: cria a lista de bancos a partir da lista fixa antiga + comissões já cadastradas
         bancos = ['ITAÚ', 'SANTANDER', 'BRADESCO', 'INTER', 'CAIXA'].map(nome => {
@@ -2588,12 +2591,32 @@
     $('#fin-filters').innerHTML = `
       <div class="field"><label>Data de emissão (de)</label><input type="date" id="ff-de" value="${finFilters.dataDe}" /></div>
       <div class="field"><label>Data de emissão (até)</label><input type="date" id="ff-ate" value="${finFilters.dataAte}" /></div>
+      <div class="field"><label>Alíquota de impostos (%)</label><input type="number" step="0.01" id="ff-aliquota" value="${aliquotaImposto}" style="width:110px;" /></div>
       <button onclick="clearFinFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
     `;
     $('#ff-de').addEventListener('change', e => { finFilters.dataDe = e.target.value; renderFinanceiro(); });
     $('#ff-ate').addEventListener('change', e => { finFilters.dataAte = e.target.value; renderFinanceiro(); });
+    $('#ff-aliquota').addEventListener('change', async e => {
+      aliquotaImposto = parseFloat(e.target.value) || 0;
+      await safeSet('adtacred:aliquota-imposto', String(aliquotaImposto));
+      renderFinanceiro();
+    });
   }
   window.clearFinFilters = function () { finFilters = { dataDe: '', dataAte: '' }; renderFinanceiro(); };
+
+  function repasseParceiroCalculado(p) {
+    if (p.pagarComissaoParceiro === false) return 0;
+    if (!p.parceiroId) return 0;
+    const parc = parceiros.find(x => x.id === p.parceiroId);
+    if (!parc) return 0;
+    return (Number(p.valorFinanciado) || 0) * (Number(parc.percentualPadrao) || 0) / 100;
+  }
+  window.toggleParceiroPagamento = async function (id, checked) {
+    const p = propostas.find(x => x.id === id);
+    if (p) p.pagarComissaoParceiro = checked;
+    await savePropostas();
+    renderFinanceiro();
+  };
 
   function renderFinanceiro() {
     renderFinFilters();
@@ -2602,27 +2625,40 @@
     if (finFilters.dataAte) emitidas = emitidas.filter(p => p.dataEmissao && p.dataEmissao <= finFilters.dataAte);
 
     const totalFinanciado = emitidas.reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
-    const totalComissao = emitidas.reduce((s, p) => s + comissaoCalculada(p), 0);
-    const totalRecebido = emitidas.filter(p => p.comissaoData).reduce((s, p) => s + comissaoCalculada(p), 0);
-    const totalAReceber = totalComissao - totalRecebido;
+    const totalBruto = emitidas.reduce((s, p) => s + comissaoCalculada(p), 0);
+    const totalImpostos = emitidas.reduce((s, p) => s + comissaoCalculada(p) * aliquotaImposto / 100, 0);
+    const totalRepasse = emitidas.reduce((s, p) => s + repasseParceiroCalculado(p), 0);
+    const totalLiquido = totalBruto - totalImpostos - totalRepasse;
     $('#fin-metrics').innerHTML = `
       <div class="metric"><p class="metric-label">Propostas emitidas</p><p class="metric-value">${emitidas.length}</p></div>
       <div class="metric"><p class="metric-label">Valor financiado emitido</p><p class="metric-value">${fmtMoney(totalFinanciado)}</p></div>
-      <div class="metric"><p class="metric-label">Comissão total prevista</p><p class="metric-value">${fmtMoney(totalComissao)}</p></div>
-      <div class="metric"><p class="metric-label">Comissão a receber</p><p class="metric-value">${fmtMoney(totalAReceber)}</p></div>
+      <div class="metric"><p class="metric-label">Comissão bruta</p><p class="metric-value">${fmtMoney(totalBruto)}</p></div>
+      <div class="metric"><p class="metric-label">Impostos (${aliquotaImposto}%)</p><p class="metric-value">${fmtMoney(totalImpostos)}</p></div>
+      <div class="metric"><p class="metric-label">Repasse a parceiros</p><p class="metric-value">${fmtMoney(totalRepasse)}</p></div>
+      <div class="metric"><p class="metric-label">Comissão líquida</p><p class="metric-value">${fmtMoney(totalLiquido)}</p></div>
     `;
     const tbl = $('#fin-table');
     tbl.innerHTML = emitidas.length
-      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Data emissão</th><th>Valor financiado</th><th>% comissão</th><th>Valor comissão</th><th>Data recebimento</th></tr></thead>
-        <tbody>${emitidas.map(p => `<tr>
+      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Parceiro</th><th>Data emissão</th><th>Valor financiado</th><th>Valor bruto</th><th>Impostos</th><th>Pagar parceiro</th><th>Repasse parceiro</th><th>Valor líquido</th><th>Data recebimento</th></tr></thead>
+        <tbody>${emitidas.map(p => {
+          const bruto = comissaoCalculada(p);
+          const imposto = bruto * aliquotaImposto / 100;
+          const pagaParceiro = p.pagarComissaoParceiro !== false && !!p.parceiroId;
+          const repasse = repasseParceiroCalculado(p);
+          const liquido = bruto - imposto - repasse;
+          return `<tr>
           <td>${escapeHtml(clienteNome(p.clienteId))}</td>
           <td>${bancoPill(p.banco)}</td>
+          <td>${escapeHtml(parceiroNome(p.parceiroId))}</td>
           <td>${fmtDate(p.dataEmissao)}</td>
           <td>${fmtMoney(p.valorFinanciado)}</td>
-          <td>${bancoPercentual(p.banco)}%</td>
-          <td><input type="number" step="0.01" style="width:110px; height:28px;" value="${p.comissaoValor != null ? p.comissaoValor : comissaoCalculada(p).toFixed(2)}" onchange="updateComissaoValor('${p.id}', this.value)" /></td>
+          <td>${fmtMoney(bruto)}</td>
+          <td>${fmtMoney(imposto)}</td>
+          <td style="text-align:center;"><input type="checkbox" ${pagaParceiro ? 'checked' : ''} ${p.parceiroId ? '' : 'disabled'} onchange="toggleParceiroPagamento('${p.id}', this.checked)" /></td>
+          <td>${fmtMoney(repasse)}</td>
+          <td style="font-weight:600;">${fmtMoney(liquido)}</td>
           <td><input type="date" style="width:140px; height:28px;" value="${p.comissaoData || ''}" onchange="updateComissaoData('${p.id}', this.value)" /></td>
-        </tr>`).join('')}</tbody>`
+        </tr>`; }).join('')}</tbody>`
       : `<tr><td class="empty">Nenhuma proposta emitida encontrada para o período.</td></tr>`;
 
     const emProducao = propostas.filter(p => p.funil === 'PRODUÇÃO' && !p.emitido);

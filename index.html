@@ -76,6 +76,10 @@
   .view { display: none; }
   .view.active { display: block; }
   .grid-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .grid-metrics-compact { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+  .grid-metrics-compact .metric { padding: 10px 12px; }
+  .grid-metrics-compact .metric-value { font-size: 17px; }
+  .grid-metrics-compact .metric-label { font-size: 9.5px; margin-bottom: 4px; }
   .metric { background: var(--ac-surface); border: 1px solid var(--ac-border); border-radius: var(--ac-radius-lg); padding: 14px 16px; }
   .metric-label { font-size: 11px; color: var(--ac-text-soft); margin: 0 0 8px; letter-spacing: 0.4px; }
   .metric-value { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; margin: 0; color: var(--ac-heading); }
@@ -265,8 +269,17 @@
       <button onclick="openRelatorioParceiro()"><i class="ti ti-report" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Relatório de parceiro</button>
     </div>
     <div class="filters-bar" id="dash-filters"></div>
-    <div class="grid-metrics" id="dash-metrics"></div>
+    <div class="grid-metrics grid-metrics-compact" id="dash-metrics"></div>
     <p class="muted" style="font-size:10px; margin-top:-10px; margin-bottom:14px;">Valores não somam tentativas paralelas do mesmo cliente em bancos diferentes — apenas a que estiver marcada como "conta no volume" em cada proposta.</p>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-alert-triangle"></i>Follow-ups pendentes</p>
+      <div class="funil-legend" style="margin-top:0; margin-bottom:10px;">
+        <span><span class="dot" style="background:#A23B32;"></span>Vencido</span>
+        <span><span class="dot" style="background:#A7752B;"></span>Vence em até 3 dias</span>
+        <span><span class="dot" style="background:#2E7D53;"></span>Mais de 3 dias pra vencer</span>
+      </div>
+      <div class="table-wrap"><table id="dash-followup-table"></table></div>
+    </div>
     <div class="charts-grid">
       <div class="card"><p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por mês</p><div class="chart-box" id="chart-barra"></div></div>
       <div class="card"><p class="card-title"><i class="ti ti-chart-pie"></i>Valor por banco</p><div class="chart-box" id="chart-pizza"></div></div>
@@ -279,14 +292,6 @@
       <p class="card-title"><i class="ti ti-chart-donut"></i>Funil de propostas</p>
       <div class="funil-bar" id="funil-bar"></div>
       <div class="funil-legend" id="funil-legend"></div>
-    </div>
-    <div class="card">
-      <p class="card-title"><i class="ti ti-table"></i>Matriz &middot; comprador x valor de financiamento</p>
-      <div class="table-wrap"><table id="dash-matriz-table"></table></div>
-    </div>
-    <div class="card">
-      <p class="card-title"><i class="ti ti-alert-triangle"></i>Follow-ups pendentes</p>
-      <div class="table-wrap"><table id="dash-followup-table"></table></div>
     </div>
   </div>
 
@@ -1222,25 +1227,20 @@
     }).join('');
     $('#funil-legend').innerHTML = FUNIL_STAGES.map(s => `<span><span class="dot" style="background:${FUNIL_STYLES[s].fg}"></span>${s}: ${counts[s]}</span>`).join('');
 
-    // matriz comprador x valor
-    const byClient = {};
-    volRows.forEach(p => { const k = p.clienteId; if (!k) return; byClient[k] = (byClient[k] || 0) + (Number(p.valorFinanciado) || 0); });
-    const matrizRows = Object.entries(byClient).sort((a, b) => b[1] - a[1]).slice(0, 15);
-    const matrizTbl = $('#dash-matriz-table');
-    matrizTbl.innerHTML = matrizRows.length
-      ? `<thead><tr><th>Comprador</th><th>Valor de financiamento</th></tr></thead><tbody>${matrizRows.map(([cid, v]) => `<tr><td>${escapeHtml(clienteNome(cid))}</td><td>${fmtMoney(v)}</td></tr>`).join('')}</tbody>`
-      : `<tr><td class="empty">Sem dados para os filtros selecionados.</td></tr>`;
-
-    // follow-up
+    // follow-up — semáforo por proximidade do vencimento
+    function diasAteVencer(dataFollowUp) { const d = daysSince(dataFollowUp); return d === null ? null : -d; }
     const pending = rows.filter(p => p.funil !== 'FINALIZADO' && p.funil !== 'REPROVADO' && p.dataFollowUp)
-      .map(p => ({ p, dias: daysSince(p.dataFollowUp) })).filter(x => x.dias !== null && x.dias >= 0)
-      .sort((a, b) => b.dias - a.dias).slice(0, 8);
+      .map(p => ({ p, dv: diasAteVencer(p.dataFollowUp) })).filter(x => x.dv !== null)
+      .sort((a, b) => a.dv - b.dv).slice(0, 10);
     const tbl = $('#dash-followup-table');
     tbl.innerHTML = pending.length
-      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Status</th><th>Dias sem contato</th><th></th></tr></thead><tbody>${pending.map(({ p, dias }) => `
+      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Status</th><th>Follow-up</th><th></th></tr></thead><tbody>${pending.map(({ p, dv }) => {
+          const cor = dv < 0 ? '#A23B32' : dv <= 3 ? '#A7752B' : '#2E7D53';
+          const texto = dv < 0 ? `VENCIDO HÁ ${Math.abs(dv)} DIA(S)` : dv === 0 ? 'VENCE HOJE' : `VENCE EM ${dv} DIA(S)`;
+          return `
           <tr><td>${escapeHtml(clienteNome(p.clienteId))}</td><td>${bancoPill(p.banco)}</td><td>${badgeFunil(p.funil)}</td>
-          <td class="${dias > 5 ? 'pill-danger-text' : dias > 2 ? 'pill-amber-text' : ''}">${dias} dia(s)</td>
-          <td><button class="icon-btn" onclick="goToProposal('${p.id}')"><i class="ti ti-arrow-right" style="font-size:12px;"></i></button></td></tr>`).join('')}</tbody>`
+          <td><span style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:${cor};"><span style="width:8px; height:8px; border-radius:50%; background:${cor}; display:inline-block;"></span>${texto}</span></td>
+          <td><button class="icon-btn" onclick="goToProposal('${p.id}')"><i class="ti ti-arrow-right" style="font-size:12px;"></i></button></td></tr>`; }).join('')}</tbody>`
       : `<tr><td class="empty">Nenhum follow-up pendente.</td></tr>`;
   }
   window.goToTab = function (tabName) {
@@ -1371,7 +1371,6 @@
             <td class="row-actions">
               <button class="icon-btn" onclick="openProposalForm('${principal.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
               <button class="icon-btn" onclick="copyProposal('${principal.id}')" title="Copiar proposta (ex: mesma proposta em outro banco)"><i class="ti ti-copy" style="font-size:12px;"></i>Copiar</button>
-              <button class="icon-btn" onclick="openTimeline('${principal.id}')" title="Timeline do processo"><i class="ti ti-timeline-event" style="font-size:12px;"></i></button>
               <button class="icon-btn danger" onclick="deleteProposal('${principal.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
             </td>
           </tr>`; }).join('')}</tbody>`
@@ -1550,7 +1549,7 @@
     wrap.innerHTML = `
       <div class="modal">
         <p class="card-title">${editing ? 'Editar proposta' : 'Nova proposta'}</p>
-        ${editing && p.kanbanEtapaId ? `<p class="muted" style="font-size:10.5px; margin-top:-8px; margin-bottom:10px;"><i class="ti ti-layout-kanban" style="font-size:12px; vertical-align:-2px;"></i> Etapa atual no Kanban: ${kanbanEtapaBadge(p.kanbanEtapaId)} &nbsp; <a href="#" onclick="openTimeline('${p.id}'); return false;" style="font-size:10.5px;">Ver timeline</a></p>` : ''}
+        ${editing && p.kanbanEtapaId ? `<p class="muted" style="font-size:10.5px; margin-top:-8px; margin-bottom:10px;"><i class="ti ti-layout-kanban" style="font-size:12px; vertical-align:-2px;"></i> Etapa atual no Kanban: ${kanbanEtapaBadge(p.kanbanEtapaId)} <span style="font-size:9.5px;">(para ajustar as datas, use o botão "Abrir" no card do CRM Kanban)</span></p>` : ''}
         <div class="form-grid">
           <div class="field field-full" style="position:relative;">
             <label>Cliente</label>
@@ -1888,7 +1887,10 @@
                 <select onchange="moveKanbanCard('${p.id}', this.value)">
                   ${kanbanEtapas.map(e2 => `<option value="${e2.id}" ${e2.id === et.id ? 'selected' : ''}>${escapeHtml(e2.nome)}</option>`).join('')}
                 </select>
-                <span class="kc-remove" onclick="removeFromKanban('${p.id}')">Remover</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+                  <button type="button" onclick="openTimeline('${p.id}')" style="height:24px; padding:0 8px; font-size:9.5px; border-radius:6px;"><i class="ti ti-calendar-time" style="font-size:11px; margin-right:3px;"></i>Abrir</button>
+                  <span class="kc-remove" onclick="removeFromKanban('${p.id}')" style="margin-top:0;">Remover</span>
+                </div>
               </div>`; }).join('') : '<p class="muted" style="font-size:9px; padding:6px 2px;">Sem propostas.</p>'}
           </div>
         </div>`;

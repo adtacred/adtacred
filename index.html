@@ -1020,21 +1020,27 @@
   }
   async function mergeById(key, localArray) {
     if (!localdb.usingRemote) return localArray;
-    try {
-      const r = await localdb.get(key, true);
-      const remoteArray = r && r.value ? JSON.parse(r.value) : [];
-      const map = new Map(remoteArray.map(item => [item.id, item]));
-      localArray.forEach(item => map.set(item.id, item));
-      return Array.from(map.values());
-    } catch (e) { return localArray; }
+    // NÃO engolimos erro aqui de propósito: se a busca falhar, quem chamou precisa
+    // cancelar o salvamento em vez de arriscar sobrescrever a planilha com um array incompleto.
+    const r = await localdb.get(key, true);
+    const remoteArray = r && r.value ? JSON.parse(r.value) : [];
+    const map = new Map(remoteArray.map(item => [item.id, item]));
+    localArray.forEach(item => map.set(item.id, item));
+    return Array.from(map.values());
   }
   async function saveClientes(deletedId) {
-    clientes = await mergeById('adtacred:clientes', clientes);
+    let merged;
+    try { merged = await mergeById('adtacred:clientes', clientes); }
+    catch (e) { setSync('FALHA AO SALVAR CLIENTES — TENTE NOVAMENTE (NADA FOI PERDIDO)'); showToast('Não foi possível salvar agora — verifique a conexão e tente de novo.'); return; }
+    clientes = merged;
     if (deletedId) clientes = clientes.filter(c => c.id !== deletedId);
     await safeSet('adtacred:clientes', clientes);
   }
   async function saveParceiros(deletedId) {
-    parceiros = await mergeById('adtacred:parceiros', parceiros);
+    let merged;
+    try { merged = await mergeById('adtacred:parceiros', parceiros); }
+    catch (e) { setSync('FALHA AO SALVAR PARCEIROS — TENTE NOVAMENTE (NADA FOI PERDIDO)'); showToast('Não foi possível salvar agora — verifique a conexão e tente de novo.'); return; }
+    parceiros = merged;
     if (deletedId) parceiros = parceiros.filter(p => p.id !== deletedId);
     await safeSet('adtacred:parceiros', parceiros);
   }
@@ -1043,7 +1049,10 @@
   async function saveSolicitacoes() { await safeSet('adtacred:solicitacoes', solicitacoes); }
   async function saveBancosComissao() { await safeSet('adtacred:bancos-comissao', bancosComissao); }
   async function saveBancos(deletedId) {
-    bancos = await mergeById('adtacred:bancos', bancos);
+    let merged;
+    try { merged = await mergeById('adtacred:bancos', bancos); }
+    catch (e) { setSync('FALHA AO SALVAR BANCOS — TENTE NOVAMENTE (NADA FOI PERDIDO)'); showToast('Não foi possível salvar agora — verifique a conexão e tente de novo.'); return; }
+    bancos = merged;
     if (deletedId) bancos = bancos.filter(b => b.id !== deletedId);
     await safeSet('adtacred:bancos', bancos);
   }

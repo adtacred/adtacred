@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>AdtaCred — Sistema</title>
+<title>AdtaCred — Sistema V2.8</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -71,6 +71,17 @@
   .ac-theme-toggle button { height: 26px; width: 26px; padding: 0; border-radius: 6px; border: 1px solid rgba(255,255,255,0.18); background: transparent; color: rgba(237,239,234,0.75); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
   .ac-theme-toggle button.active { background: var(--ac-gold); color: var(--ac-primary-dark); border-color: var(--ac-gold); }
   .ac-sync { font-size: 10px; color: rgba(237,239,234,0.45); padding: 10px 6px 0; }
+  .tab-alert { margin-left:auto; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:#E0685C; color:#fff; font-size:9px; font-weight:700; display:none; align-items:center; justify-content:center; }
+  .followup-compact td { padding-top:5px; padding-bottom:5px; font-size:10.5px; }
+  .followup-obs { max-width:360px; white-space:normal; line-height:1.25; color:var(--ac-text-soft); }
+  .proposal-compact .form-grid { grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:8px; }
+  .proposal-compact .field label { font-size:9.5px; min-height:24px; display:flex; align-items:flex-end; line-height:1.15; }
+  .proposal-compact input, .proposal-compact select { height:32px !important; font-size:11px !important; }
+  .partner-market-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+  .partner-market-card { background:var(--ac-surface); border:1px solid var(--ac-border); border-radius:var(--ac-radius-lg); padding:14px; }
+  .partner-market-card h3 { margin:0 0 8px; font-size:13px; color:var(--ac-heading); }
+  .partner-market-card p { margin:4px 0; font-size:11px; line-height:1.45; }
+  .calc-highlight { background:var(--ac-primary-tint) !important; font-weight:700; color:var(--ac-heading) !important; }
 
   .ac-main { flex: 1; min-width: 0; padding: 22px 26px 28px; background: var(--ac-bg); }
   .view { display: none; }
@@ -230,6 +241,28 @@
     .charts-grid { grid-template-columns: 1fr; }
   }
 </style>
+
+  <style>
+    #view-comercial .metric-value { font-size:20px; }
+    #view-comercial table td { vertical-align:middle; }
+    #view-comercial .row-actions { white-space:nowrap; }
+    .commercial-kanban { display:grid; grid-template-columns:repeat(4,minmax(235px,1fr)); gap:10px; overflow-x:auto; padding-bottom:4px; }
+    .commercial-kanban-col { background:var(--ac-bg); border:1px solid var(--ac-border); border-radius:12px; min-height:210px; padding:9px; }
+    .commercial-kanban-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; font-size:11px; font-weight:800; text-transform:uppercase; }
+    .commercial-kanban-list { min-height:155px; }
+    .commercial-kanban-card { background:var(--ac-card); border:1px solid var(--ac-border); border-radius:10px; padding:9px; margin-bottom:7px; cursor:grab; box-shadow:0 1px 2px rgba(0,0,0,.03); }
+    .commercial-kanban-card:active { cursor:grabbing; }
+    .commercial-kanban-card.overdue { border-left:4px solid #A23B32; }
+    .commercial-kanban-card.today { border-left:4px solid #A7752B; }
+    .commercial-kanban-card .ck-title { display:flex; justify-content:space-between; gap:6px; font-size:11px; font-weight:800; }
+    .commercial-kanban-card .ck-meta { font-size:9.5px; color:var(--ac-muted); margin-top:4px; line-height:1.35; }
+    .commercial-kanban-card .ck-action { font-size:10px; margin-top:7px; }
+    .commercial-kanban-card .ck-actions { display:flex; gap:5px; margin-top:8px; }
+    .commercial-kanban-card .ck-actions button { padding:5px 7px; font-size:9.5px; }
+    .commercial-kanban-col.drag-over { outline:2px dashed var(--ac-green); outline-offset:-4px; }
+    @media(max-width:1100px){ .commercial-kanban{grid-template-columns:repeat(4,250px);} }
+  </style>
+
 </head>
 <body>
 
@@ -247,9 +280,12 @@
       <button class="tab active" data-tab="dashboard"><i class="ti ti-chart-bar"></i><span class="tab-label">Dashboard</span></button>
       <button class="tab" data-tab="propostas"><i class="ti ti-file-text"></i><span class="tab-label">Propostas</span></button>
       <button class="tab" data-tab="crm"><i class="ti ti-layout-kanban"></i><span class="tab-label">CRM Kanban</span></button>
-      <button class="tab" data-tab="solicitacoes"><i class="ti ti-inbox"></i><span class="tab-label">Solicitações</span></button>
+      <button class="tab" data-tab="solicitacoes"><i class="ti ti-bell"></i><span class="tab-label">Solicitações</span><span class="tab-alert" id="sol-bell-count">0</span></button>
       <button class="tab" data-tab="clientes"><i class="ti ti-users"></i><span class="tab-label">Clientes</span></button>
+      <button class="tab" data-tab="comercial"><i class="ti ti-target-arrow"></i><span class="tab-label">Comercial</span></button>
+       <button class="tab" data-tab="metas"><i class="ti ti-checklist"></i><span class="tab-label">Metas & Execução</span></button>
       <button class="tab" data-tab="parceiros"><i class="ti ti-handshake"></i><span class="tab-label">Parceiros</span></button>
+      <button class="tab" data-tab="central-parceiro"><i class="ti ti-news"></i><span class="tab-label">Central do Parceiro</span></button>
       <button class="tab" data-tab="financeiro"><i class="ti ti-currency-dollar"></i><span class="tab-label">Financeiro</span></button>
       <button class="tab" data-tab="bancos"><i class="ti ti-building-bank"></i><span class="tab-label">Bancos</span></button>
       <button class="tab" data-tab="importar"><i class="ti ti-file-upload"></i><span class="tab-label">Importar planilha</span></button>
@@ -284,9 +320,9 @@
       <div class="card"><p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por mês</p><div class="chart-box" id="chart-barra"></div></div>
       <div class="card"><p class="card-title"><i class="ti ti-chart-pie"></i>Valor por banco</p><div class="chart-box" id="chart-pizza"></div></div>
     </div>
-    <div class="card">
-      <p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por etapa do funil</p>
-      <div class="chart-box" id="chart-cluster"></div>
+    <div class="charts-grid">
+      <div class="card"><p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por etapa do funil</p><div class="chart-box" id="chart-cluster"></div></div>
+      <div class="card"><p class="card-title"><i class="ti ti-users"></i>Valor financiado por parceiro</p><div class="chart-box" id="chart-parceiro"></div></div>
     </div>
     <div class="card">
       <p class="card-title"><i class="ti ti-chart-donut"></i>Funil de propostas</p>
@@ -301,6 +337,7 @@
       <h2>Propostas</h2>
       <div style="display:flex; gap:8px;">
         <input class="search-input" id="prop-search" placeholder="Buscar cliente ou nº proposta" />
+        <button onclick="goToFollowups()"><i class="ti ti-calendar-time" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Follow-up</button>
         <button onclick="openRelatorioParceiro()"><i class="ti ti-report" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Relatório de parceiro</button>
         <button onclick="openProposalForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Nova proposta</button>
       </div>
@@ -355,6 +392,47 @@
     <div class="table-wrap"><table id="clientes-table"></table></div>
   </div>
 
+  <!-- CRM COMERCIAL -->
+  <div class="view" id="view-comercial">
+    <div class="section-head">
+      <div>
+        <h2>CRM Comercial</h2>
+        <p class="muted" style="font-size:10.5px;margin:3px 0 0;">Prospecção e relacionamento com corretores, imobiliárias e parceiros — separado do Kanban operacional.</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="openPartnerForm()"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i>Novo parceiro</button>
+      </div>
+    </div>
+    <div class="grid-metrics grid-metrics-compact" id="comercial-metrics"></div>
+    <div class="filters-bar" id="comercial-filters"></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;">
+        <p class="card-title" style="margin:0;"><i class="ti ti-layout-kanban"></i>Kanban de relacionamento</p>
+        <span class="muted" style="font-size:9.5px;">ARRASTE O PARCEIRO ENTRE AS ETAPAS · INATIVOS NÃO APARECEM</span>
+      </div>
+      <div class="commercial-kanban" id="commercial-kanban"></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-calendar-due"></i>Follow-up comercial</p>
+      <div class="table-wrap"><table id="comercial-followup-table"></table></div>
+    </div>
+    <div class="card">
+      <p class="card-title"><i class="ti ti-chart-funnel"></i>Carteira comercial</p>
+      <div class="table-wrap"><table id="comercial-carteira-table"></table></div>
+    </div>
+    <div class="modal-bg overlay-modal-bg" id="commercial-contact-modal-wrap"></div>
+    <div class="modal-bg overlay-modal-bg" id="commercial-history-modal-wrap"></div>
+  </div>
+
+  <!-- METAS & EXECUÇÃO -->
+  <div class="view" id="view-metas">
+    <div class="section-head"><div><h2>Metas & Execução</h2><p class="muted" style="font-size:10.5px;margin:3px 0 0;">PLANEJADO × EXECUTADO — COMERCIAL, CONTEÚDO E PRODUÇÃO.</p></div><button onclick="openMetaForm()"><i class="ti ti-plus"></i> Nova meta</button></div>
+    <div class="grid-metrics grid-metrics-compact" id="metas-metrics"></div>
+    <div class="filters-bar"><div class="field"><label>Período</label><select id="meta-period-filter" onchange="renderMetas()"><option value="TODOS">Todos</option><option value="DIÁRIA">Diária</option><option value="SEMANAL">Semanal</option><option value="MENSAL">Mensal</option><option value="90 DIAS">90 dias</option></select></div><div class="field"><label>Área</label><select id="meta-area-filter" onchange="renderMetas()"><option value="TODOS">Todas</option><option>COMERCIAL</option><option>CONTEÚDO</option><option>PRODUÇÃO</option><option>FINANCEIRO</option></select></div></div>
+    <div class="card"><p class="card-title"><i class="ti ti-checklist"></i>Plano de ação</p><div class="table-wrap"><table id="metas-table"></table></div></div>
+    <div class="modal-bg overlay-modal-bg" id="meta-modal-wrap"></div>
+  </div>
+
   <!-- PARCEIROS -->
   <div class="view" id="view-parceiros">
     <div class="section-head">
@@ -367,6 +445,18 @@
     </div>
     <div class="modal-bg" id="partner-modal-wrap"></div>
     <div class="table-wrap"><table id="parceiros-table"></table></div>
+  </div>
+
+  <!-- CENTRAL DO PARCEIRO -->
+  <div class="view" id="view-central-parceiro">
+    <div class="section-head"><h2>Central do Parceiro</h2><div style="display:flex;gap:8px;"><button onclick="editMarketInfo()"><i class="ti ti-edit"></i> Editar informações</button><button onclick="openPartnerMarketPage()"><i class="ti ti-external-link"></i> Abrir página do parceiro</button></div></div>
+    <p class="muted" id="market-updated" style="font-size:10.5px;"></p>
+    <div class="partner-market-grid" id="market-banks"></div>
+    <div class="card" style="margin-top:12px;"><p class="card-title"><i class="ti ti-home-dollar"></i>Modalidades e condições</p><div id="market-modalidades"></div></div>
+    <div class="card"><p class="card-title"><i class="ti ti-chart-line"></i>Índices de mercado</p><div id="market-indices"></div></div>
+    <div class="card"><p class="card-title"><i class="ti ti-route"></i>Como funciona o processo</p><div style="display:flex;gap:8px;flex-wrap:wrap;"><span class="badge">CRÉDITO</span><span>→</span><span class="badge">ENGENHARIA</span><span>→</span><span class="badge">ANÁLISE JURÍDICA</span><span>→</span><span class="badge">EMISSÃO</span></div></div>
+    <div class="card"><p class="card-title"><i class="ti ti-help-circle"></i>Dúvidas frequentes</p><div id="market-faq"></div></div>
+    <div class="modal-bg overlay-modal-bg" id="market-edit-modal-wrap"></div>
   </div>
 
   <!-- FINANCEIRO -->
@@ -429,6 +519,7 @@
 <div class="modal-bg overlay-modal-bg" id="recibo-config-modal-wrap"></div>
 <div class="modal-bg overlay-modal-bg" id="timeline-modal-wrap"></div>
 <div class="modal-bg overlay-modal-bg" id="tempo-medio-modal-wrap"></div>
+<div class="modal-bg overlay-modal-bg" id="sol-bancos-modal-wrap"></div>
 
 <!-- FORMULÁRIO PÚBLICO -->
 <div id="public-form-wrap">
@@ -776,13 +867,27 @@
   let bancos = [];
   let aliquotaImposto = 0;
   let reciboSeq = 0;
+  let metas = [];
 
   let propPage = 1;
   let propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' };
   let propSort = { col: 'dataCriacao', dir: -1 };
   let parSort = { col: 'nome', dir: 1 };
-  let dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
+  let comercialFilters = { etapa: '', potencial: '', tipo: '', prazo: 'TODOS' };
+  let dashFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', funilSet: new Set(['APROVADO','PRODUÇÃO','EFETIVADO']), parceiroId: '' };
   let charts = {};
+  let marketInfo = {
+    atualizadoEm: new Date().toISOString().slice(0,10),
+    bancos: [
+      {nome:'ITAÚ', taxa:'11,70% a.a a 13,45% a.a', indexador:'TR', engenharia:'R$ 1.980,00'},
+      {nome:'BRADESCO', taxa:'EXCLUSIVE 12,69% · PRIME 12,79% · PRINCIPAL 12,19%', indexador:'TR', engenharia:'R$ 2.114,03'},
+      {nome:'SANTANDER', taxa:'11,79% a.a a 13,48% a.a', indexador:'TR', engenharia:'R$ 1.890,00'},
+      {nome:'INTER', taxa:'9,5% a.a + IPCA', indexador:'IPCA', engenharia:'R$ 4.000,00'}
+    ],
+    modalidades:'IMÓVEL: ATÉ 80% FINANCIADO / 20% ENTRADA (CONFORME BANCO E PERFIL). TERRENO: CONDIÇÕES ESPECÍFICAS, PODENDO HAVER IOF, VALOR MÍNIMO E RESTRIÇÃO A CONDOMÍNIO. HOME EQUITY: CRÉDITO COM GARANTIA DE IMÓVEL PARA CAPITAL DE GIRO E OUTRAS FINALIDADES.',
+    indices:'SELIC E INFLAÇÃO INFLUENCIAM O CUSTO DO CRÉDITO. O COPOM CONSIDERA INFLAÇÃO, CONTAS PÚBLICAS, ATIVIDADE ECONÔMICA E CENÁRIO EXTERNO EM SUAS DECISÕES.',
+    faq:'AS TAXAS VARIAM CONFORME SCORE, RATING, RELACIONAMENTO E MODALIDADE DE CONTA. AS CONDIÇÕES DEVEM SER CONFIRMADAS NO MOMENTO DA CONTRATAÇÃO.'
+  };
 
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
@@ -991,7 +1096,7 @@
         : 'Os dados ficam salvos neste navegador (local, sem nuvem, sem custo) — fechar e abrir o arquivo não apaga nada, mas não são compartilhados entre dispositivos/navegadores diferentes. Configure a Planilha Google para acesso compartilhado.';
     }
     try {
-      const keys = ['adtacred:clientes', 'adtacred:propostas', 'adtacred:parceiros', 'adtacred:kanban-etapas', 'adtacred:solicitacoes', 'adtacred:bancos-comissao', 'adtacred:bancos', 'adtacred:recibo-seq', 'adtacred:aliquota-imposto'];
+      const keys = ['adtacred:clientes', 'adtacred:propostas', 'adtacred:parceiros', 'adtacred:kanban-etapas', 'adtacred:solicitacoes', 'adtacred:bancos-comissao', 'adtacred:bancos', 'adtacred:recibo-seq', 'adtacred:aliquota-imposto', 'adtacred:market-info', 'adtacred:metas'];
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 25000));
       const r = await Promise.race([localdb.getMany(keys), timeoutPromise]); // uma única chamada pro Google (com plano B); nunca trava pra sempre
       clientes = r['adtacred:clientes'] && r['adtacred:clientes'].value ? JSON.parse(r['adtacred:clientes'].value) : [];
@@ -1001,8 +1106,13 @@
       solicitacoes = r['adtacred:solicitacoes'] && r['adtacred:solicitacoes'].value ? JSON.parse(r['adtacred:solicitacoes'].value) : [];
       bancosComissao = r['adtacred:bancos-comissao'] && r['adtacred:bancos-comissao'].value ? JSON.parse(r['adtacred:bancos-comissao'].value) : [];
       bancos = r['adtacred:bancos'] && r['adtacred:bancos'].value ? JSON.parse(r['adtacred:bancos'].value) : [];
+      const qtdBancosAntesUnificar = bancos.length;
+      bancos = unificarBancos(bancos);
+      sincronizarNomeBancoNasPropostas();
       reciboSeq = r['adtacred:recibo-seq'] && r['adtacred:recibo-seq'].value ? parseInt(r['adtacred:recibo-seq'].value, 10) || 0 : 0;
       aliquotaImposto = r['adtacred:aliquota-imposto'] && r['adtacred:aliquota-imposto'].value ? parseFloat(r['adtacred:aliquota-imposto'].value) || 0 : 0;
+      if (r['adtacred:market-info'] && r['adtacred:market-info'].value) { try { marketInfo = JSON.parse(r['adtacred:market-info'].value); } catch(e){} }
+      metas = r['adtacred:metas'] && r['adtacred:metas'].value ? JSON.parse(r['adtacred:metas'].value) : [];
       if (!bancos.length) {
         // primeira vez: cria a lista de bancos a partir da lista fixa antiga + comissões já cadastradas
         bancos = ['ITAÚ', 'SANTANDER', 'BRADESCO', 'INTER', 'CAIXA'].map(nome => {
@@ -1010,6 +1120,10 @@
           return { id: uid(), nome, percentualComissao: old ? old.percentual : '', logo: '' };
         });
         await saveBancos();
+      } else if (qtdBancosAntesUnificar !== bancos.length) {
+        // Limpeza automática de cadastros antigos duplicados por nome.
+        await safeSet('adtacred:bancos', bancos);
+        await savePropostas();
       }
       setSync(localdb.usingRemote ? 'DADOS NA PLANILHA GOOGLE' : 'DADOS SALVOS NESTE NAVEGADOR (LOCAL)');
     } catch (e) {
@@ -1047,13 +1161,51 @@
   async function savePropostas() { await safeSet('adtacred:propostas', propostas); }
   async function saveEtapas() { await safeSet('adtacred:kanban-etapas', kanbanEtapas); }
   async function saveSolicitacoes() { await safeSet('adtacred:solicitacoes', solicitacoes); }
+  async function saveMetas() { await safeSet('adtacred:metas', metas); }
+  async function saveMarketInfo() { await safeSet('adtacred:market-info', marketInfo); }
   async function saveBancosComissao() { await safeSet('adtacred:bancos-comissao', bancosComissao); }
+
+  function bancoNomeChave(nome) {
+    return String(nome || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .trim().replace(/\s+/g, ' ').toUpperCase();
+  }
+
+  function unificarBancos(lista) {
+    const mapa = new Map();
+    (lista || []).forEach(b => {
+      if (!b || !b.nome) return;
+      const chave = bancoNomeChave(b.nome);
+      if (!chave) return;
+      if (!mapa.has(chave)) {
+        mapa.set(chave, { ...b, nome: String(b.nome).trim().toUpperCase() });
+      } else {
+        const atual = mapa.get(chave);
+        // Preserva em um único cadastro os dados mais completos encontrados.
+        if (!atual.logo && b.logo) atual.logo = b.logo;
+        if ((!atual.percentualComissao && atual.percentualComissao !== 0) && (b.percentualComissao || b.percentualComissao === 0)) {
+          atual.percentualComissao = b.percentualComissao;
+        }
+      }
+    });
+    return Array.from(mapa.values());
+  }
+
+  function sincronizarNomeBancoNasPropostas() {
+    const canonicos = new Map(bancos.map(b => [bancoNomeChave(b.nome), b.nome]));
+    propostas.forEach(p => {
+      const nome = canonicos.get(bancoNomeChave(p.banco));
+      if (nome) p.banco = nome;
+    });
+  }
+
   async function saveBancos(deletedId) {
     let merged;
     try { merged = await mergeById('adtacred:bancos', bancos); }
     catch (e) { setSync('FALHA AO SALVAR BANCOS — TENTE NOVAMENTE (NADA FOI PERDIDO)'); showToast('Não foi possível salvar agora — verifique a conexão e tente de novo.'); return; }
-    bancos = merged;
+    bancos = unificarBancos(merged);
     if (deletedId) bancos = bancos.filter(b => b.id !== deletedId);
+    sincronizarNomeBancoNasPropostas();
     await safeSet('adtacred:bancos', bancos);
   }
   async function safeSet(key, val) {
@@ -1151,7 +1303,7 @@
     renderDashboard();
   };
   window.clearDashFilters = function () {
-    dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
+    dashFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', funilSet: new Set(['APROVADO','PRODUÇÃO','EFETIVADO']), parceiroId: '' };
     renderDashboard();
   };
   document.addEventListener('click', (e) => {
@@ -1229,6 +1381,11 @@
     const clusterValues = FUNIL_STAGES.map(f => volRows.filter(p => p.funil === f).reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0));
     renderHBarChart('chart-cluster', FUNIL_STAGES, clusterValues, FUNIL_STAGES.map(f => FUNIL_STYLES[f].fg));
 
+    const byParceiro = {};
+    volRows.forEach(p => { const k = parceiroNome(p.parceiroId) || 'SEM PARCEIRO'; byParceiro[k] = (byParceiro[k] || 0) + (Number(p.valorFinanciado) || 0); });
+    const parceiroLabels = Object.keys(byParceiro).sort((a,b) => byParceiro[b]-byParceiro[a]);
+    renderHBarChart('chart-parceiro', parceiroLabels, parceiroLabels.map(k => byParceiro[k]), parceiroLabels.map((_,i)=>PALETTE[i%PALETTE.length]));
+
     // funil bar (counts)
     const total = rows.length || 1;
     const counts = {};
@@ -1246,12 +1403,13 @@
       .sort((a, b) => a.dv - b.dv).slice(0, 10);
     const tbl = $('#dash-followup-table');
     tbl.innerHTML = pending.length
-      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Status</th><th>Follow-up</th><th></th></tr></thead><tbody>${pending.map(({ p, dv }) => {
+      ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Status</th><th>Follow-up</th><th>Observação</th><th></th></tr></thead><tbody class="followup-compact">${pending.map(({ p, dv }) => {
           const cor = dv < 0 ? '#A23B32' : dv <= 3 ? '#A7752B' : '#2E7D53';
           const texto = dv < 0 ? `VENCIDO HÁ ${Math.abs(dv)} DIA(S)` : dv === 0 ? 'VENCE HOJE' : `VENCE EM ${dv} DIA(S)`;
           return `
           <tr><td>${escapeHtml(clienteNome(p.clienteId))}</td><td>${bancoPill(p.banco)}</td><td>${badgeFunil(p.funil)}</td>
-          <td><span style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:${cor};"><span style="width:8px; height:8px; border-radius:50%; background:${cor}; display:inline-block;"></span>${texto}</span></td>
+          <td><span style="display:inline-flex; align-items:center; gap:6px; font-weight:600; color:${cor};"><span style="width:6px; height:6px; border-radius:50%; background:${cor}; display:inline-block;"></span>${texto}</span></td>
+          <td class="followup-obs">${escapeHtml(p.observacao || '—')}</td>
           <td><button class="icon-btn" onclick="goToProposal('${p.id}')"><i class="ti ti-arrow-right" style="font-size:12px;"></i></button></td></tr>`; }).join('')}</tbody>`
       : `<tr><td class="empty">Nenhum follow-up pendente.</td></tr>`;
   }
@@ -1261,6 +1419,7 @@
     $('.tab[data-tab="' + tabName + '"]').classList.add('active');
     $('#view-' + tabName).classList.add('active');
   };
+  window.goToFollowups = function () { goToTab('dashboard'); setTimeout(() => { const el = document.getElementById('dash-followup-table'); if (el) el.scrollIntoView({behavior:'smooth', block:'center'}); }, 80); };
   window.goToProposal = function (id) {
     $$('.tab').forEach(t => t.classList.remove('active'));
     $$('.view').forEach(v => v.classList.remove('active'));
@@ -1559,7 +1718,7 @@
       prazoAcordado: '', taxaAcordada: '', valorIQ: '', emitido: false,
     };
     wrap.innerHTML = `
-      <div class="modal">
+      <div class="modal proposal-compact">
         <p class="card-title">${editing ? 'Editar proposta' : 'Nova proposta'}</p>
         ${editing && p.kanbanEtapaId ? `<p class="muted" style="font-size:10.5px; margin-top:-8px; margin-bottom:10px;"><i class="ti ti-layout-kanban" style="font-size:12px; vertical-align:-2px;"></i> Etapa atual no Kanban: ${kanbanEtapaBadge(p.kanbanEtapaId)} <span style="font-size:9.5px;">(para ajustar as datas, use o botão "Abrir" no card do CRM Kanban)</span></p>` : ''}
         <div class="form-grid">
@@ -1591,16 +1750,16 @@
         <div class="form-grid">
           <div class="field"><label>Valor compra e venda imóvel</label><input type="number" id="f-valorImovel" value="${p.valorImovel}" /></div>
           <div class="field"><label>Valor entrada FGTS</label><input type="number" id="f-fgts" value="${p.fgts}" /></div>
-          <div class="field"><label>Valor de financiamento</label><input type="number" id="f-valorFinanciado" value="${p.valorFinanciado}" /></div>
-          <div class="field"><label>Valor entrada recurso próprio (calculado)</label><input type="text" id="f-recProprios" readonly /></div>
+          <div class="field"><label>Valor de financiamento (calculado)</label><input class="calc-highlight" type="number" id="f-valorFinanciado" value="${p.valorFinanciado}" readonly /></div>
+          <div class="field"><label>Valor entrada recurso próprio</label><input type="number" id="f-recPropriosInput" value="${p.recProprios !== undefined && p.recProprios !== '' ? p.recProprios : Math.max(0,(Number(p.valorImovel)||0)-(Number(p.valorFinanciado)||0)-(Number(p.fgts)||0))}" /></div>
           <div class="field"><label>Valor avaliação banco</label><input type="number" id="f-valorAvaliacaoBanco" value="${p.valorAvaliacaoBanco}" /></div>
-          <div class="field"><label>Valor ITBI</label><input type="number" id="f-itbi" value="${p.itbi}" /></div>
+          <div class="field"><label>Valor ITBI</label><input type="number" id="f-itbi" value="${p.itbi !== undefined && p.itbi !== '' ? p.itbi : (p.valorDespesas || '')}" /></div>
           <div class="field"><label>Prazo acordado (meses)</label><input type="number" id="f-prazoAcordado" value="${p.prazoAcordado}" /></div>
           <div class="field"><label>Taxa acordada (% a.a.)</label><input type="number" step="0.01" id="f-taxaAcordada" value="${p.taxaAcordada}" /></div>
           <div class="field"><label>Valor IQ</label><input type="number" id="f-valorIQ" value="${p.valorIQ}" /></div>
           <div class="field"><label>Possui IQ?</label><input type="text" id="f-possuiIQ" readonly /></div>
-          <div class="field"><label>Valor total contratado (calculado)</label><input type="text" id="f-valorTotalContratado" readonly /></div>
-          <div class="field"><label>Valor pgto vendedores (calculado)</label><input type="text" id="f-valorPagoVendedor" readonly /></div>
+          <div class="field"><label>Valor total contratado (calculado)</label><input type="text" class="calc-highlight" id="f-valorTotalContratado" readonly /></div>
+          <div class="field"><label>Valor pgto vendedores (calculado)</label><input type="text" class="calc-highlight" id="f-valorPagoVendedor" readonly /></div>
         </div>
         <hr style="border:none; border-top:1px solid var(--ac-border); margin:1rem 0;">
         <p class="card-title" style="font-size:12px;"><i class="ti ti-git-branch"></i>Operação — outras tentativas deste cliente</p>
@@ -1617,16 +1776,18 @@
 
     function updateCalc() {
       const vi = Number($('#f-valorImovel').value) || 0;
-      const vf = Number($('#f-valorFinanciado').value) || 0;
+      const rec = Number($('#f-recPropriosInput').value) || 0;
       const fgts = Number($('#f-fgts').value) || 0;
       const itbi = Number($('#f-itbi').value) || 0;
       const iq = Number($('#f-valorIQ').value) || 0;
-      $('#f-recProprios').value = fmtMoney(vi - vf - fgts);
+      const vfCalc = Math.max(0, vi - rec - fgts);
+      $('#f-valorFinanciado').value = vfCalc || '';
+      const vf = vfCalc;
       $('#f-possuiIQ').value = iq > 0 ? 'SIM' : 'NÃO';
       $('#f-valorTotalContratado').value = fmtMoney(vf + itbi);
-      $('#f-valorPagoVendedor').value = fmtMoney(vf + fgts);
+      $('#f-valorPagoVendedor').value = fmtMoney(Math.max(0, vf + fgts - iq - itbi));
     }
-    ['f-valorImovel', 'f-valorFinanciado', 'f-fgts', 'f-itbi', 'f-valorIQ'].forEach(id => $('#' + id).addEventListener('input', updateCalc));
+    ['f-valorImovel', 'f-recPropriosInput', 'f-fgts', 'f-itbi', 'f-valorIQ'].forEach(id => $('#' + id).addEventListener('input', updateCalc));
     updateCalc();
 
     // autocomplete de cliente
@@ -1671,12 +1832,13 @@
       numeroProposta: $('#f-numeroProposta').value.trim(), status: $('#f-status').value, funil: $('#f-funil').value,
       dataCriacao, dataFollowUp: $('#f-dataFollowUp').value, observacao: $('#f-observacao').value.trim(),
       emitido: $('#f-emitido').checked, dataEmissao: $('#f-dataEmissao').value,
-      valorImovel: $('#f-valorImovel').value, fgts: $('#f-fgts').value, valorFinanciado: $('#f-valorFinanciado').value,
+      valorImovel: $('#f-valorImovel').value, recProprios: $('#f-recPropriosInput').value, fgts: $('#f-fgts').value, valorFinanciado: $('#f-valorFinanciado').value,
       valorAvaliacaoBanco: $('#f-valorAvaliacaoBanco').value, itbi: $('#f-itbi').value,
-      prazoAcordado: $('#f-prazoAcordado').value, taxaAcordada: $('#f-taxaAcordada').value, valorIQ: $('#f-valorIQ').value,
+      prazoAcordado: $('#f-prazoAcordado').value, taxaAcordada: $('#f-taxaAcordada').value, valorIQ: $('#f-valorIQ').value, valorDespesas: '',
     });
     const idx = propostas.findIndex(p => p.id === id);
     if (idx >= 0) propostas[idx] = data; else propostas.push(data);
+    if (data.grupoId) autoPrincipalGrupo(data.grupoId);
     savePropostas();
     closeModal('proposal-modal-wrap');
     renderAll();
@@ -1939,8 +2101,10 @@
   }
   window.clearSolFilters = function () { solFilters = { status: '' }; renderSolicitacoes(); };
 
+  function updateSolicitacaoBell() { const n = solicitacoes.filter(s => (s.status || 'Nova') === 'Nova').length; const el = document.getElementById('sol-bell-count'); if (!el) return; el.textContent = n > 99 ? '99+' : String(n); el.style.display = n ? 'inline-flex' : 'none'; }
   function renderSolicitacoes() {
     renderSolFilters();
+    updateSolicitacaoBell();
     const q = ($('#sol-search').value || '').toLowerCase();
     let rows = solicitacoes.filter(s =>
       (s.nome || '').toLowerCase().includes(q) || (s.telefone || '').toLowerCase().includes(q) || (s.corretor || '').toLowerCase().includes(q)
@@ -1961,10 +2125,22 @@
             <td class="row-actions">
               <button class="icon-btn" onclick="openSolicitacaoView('${s.id}')"><i class="ti ti-eye" style="font-size:12px;"></i>Abrir</button>
               <button class="icon-btn" onclick="convertSolicitacao('${s.id}')"><i class="ti ti-arrow-right" style="font-size:12px;"></i>Criar proposta</button>
+              <button class="icon-btn danger" onclick="deleteSolicitacao('${s.id}')"><i class="ti ti-trash" style="font-size:12px;"></i>Excluir</button>
             </td>
           </tr>`).join('')}</tbody>`
       : `<tr><td class="empty">Nenhuma solicitação encontrada.</td></tr>`;
   }
+
+  window.deleteSolicitacao = async function(id) {
+    const s = solicitacoes.find(x => x.id === id);
+    if (!s) return;
+    if (!confirm('TEM CERTEZA QUE DESEJA EXCLUIR ESTA SOLICITAÇÃO? ESTA AÇÃO NÃO PODE SER DESFEITA.')) return;
+    solicitacoes = solicitacoes.filter(x => x.id !== id);
+    await saveSolicitacoes();
+    renderSolicitacoes(); updateSolicitacaoBell();
+    showToast('Solicitação excluída.');
+  };
+
   $('#sol-search').addEventListener('input', renderSolicitacoes);
 
   function solField(label, value) {
@@ -2032,25 +2208,38 @@
     const s = solicitacoes.find(x => x.id === id);
     if (!s) return;
     closeModal('solicitacao-view-modal-wrap');
-    let cliente = clientes.find(c => c.nome.trim().toLowerCase() === s.nome.trim().toLowerCase());
-    if (!cliente) {
-      cliente = { id: uid(), nome: s.nome, cpf: s.cpf || '', telefone: s.telefone || '', email: s.email || '', renda: s.renda || '', observacao: '' };
-      clientes.push(cliente);
-      await saveClientes();
-    }
-    s.status = 'Processada';
-    await saveSolicitacoes();
-    renderAll();
-    $$('.tab').forEach(t => t.classList.remove('active'));
-    $$('.view').forEach(v => v.classList.remove('active'));
-    $('.tab[data-tab="propostas"]').classList.add('active');
-    $('#view-propostas').classList.add('active');
-    renderPropostas();
-    setTimeout(() => {
-      openProposalForm();
-      if ($('#f-clienteId')) { $('#f-clienteId').value = cliente.id; $('#f-clienteSearch').value = cliente.nome; }
-      if ($('#f-valorImovel') && s.valorImovel) $('#f-valorImovel').value = s.valorImovel;
-    }, 50);
+    const disponiveis = bancos.length ? [...new Set(unificarBancos(bancos).map(b=>b.nome))] : BANCOS.filter(b=>b!=='OUTRO');
+    const wrap = $('#sol-bancos-modal-wrap');
+    wrap.innerHTML = `<div class="modal" style="max-width:520px;">
+      <p class="card-title"><i class="ti ti-building-bank"></i>Criar propostas — ${escapeHtml(s.nome)}</p>
+      <p class="muted" style="font-size:10.5px;">SELECIONE TODOS OS BANCOS QUE DESEJA ANALISAR. O SISTEMA CRIARÁ UMA ÚNICA OPERAÇÃO COM UMA PROPOSTA POR BANCO.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;">${disponiveis.map(b=>`<label style="display:flex;gap:8px;align-items:center;border:1px solid var(--ac-border);padding:10px;border-radius:8px;font-size:11px;"><input type="checkbox" class="sol-bank-check" value="${escapeHtml(b)}" style="width:auto;height:auto;">${bancoPill(b)}</label>`).join('')}</div>
+      <label style="display:flex;gap:7px;align-items:center;font-size:10.5px;"><input type="checkbox" style="width:auto;height:auto;" onchange="$$('.sol-bank-check').forEach(x=>x.checked=this.checked)"> Selecionar todos</label>
+      <p id="sol-bank-error" style="color:var(--ac-red);font-size:10.5px;display:none;"></p>
+      <div class="modal-actions"><button onclick="closeModal('sol-bancos-modal-wrap')">Cancelar</button><button onclick="createSolicitacaoPropostas('${s.id}')"><i class="ti ti-check"></i> Criar propostas</button></div></div>`;
+    wrap.classList.add('open');
+  };
+
+  function autoPrincipalGrupo(grupoId) {
+    const membros = propostas.filter(p => p.grupoId === grupoId);
+    if (!membros.length) return;
+    const aprovados = membros.filter(p => ['APROVADO','PRODUÇÃO','EFETIVADO','FINALIZADO'].includes(p.funil));
+    const prioridade = ['ITAÚ','ITAU','SANTANDER','BRADESCO','INTER'];
+    let principal = null;
+    for (const nome of prioridade) { principal = aprovados.find(p => (p.banco||'').toUpperCase() === nome); if (principal) break; }
+    if (!principal && aprovados.length) principal = aprovados[0];
+    membros.forEach(p => p.contarNoVolume = principal ? p.id === principal.id : false);
+  }
+
+  window.createSolicitacaoPropostas = async function(id) {
+    const s = solicitacoes.find(x=>x.id===id); if(!s) return;
+    const selecionados = $$('.sol-bank-check:checked').map(x=>x.value);
+    const err=$('#sol-bank-error'); if(!selecionados.length){err.textContent='SELECIONE PELO MENOS UM BANCO.';err.style.display='block';return;}
+    let cliente = clientes.find(c => (c.cpf && s.cpf && c.cpf.replace(/\D/g,'')===s.cpf.replace(/\D/g,'')) || c.nome.trim().toLowerCase()===s.nome.trim().toLowerCase());
+    if(!cliente){cliente={id:uid(),nome:s.nome,cpf:s.cpf||'',telefone:s.telefone||'',email:s.email||'',renda:s.renda||'',observacao:''};clientes.push(cliente);await saveClientes();}
+    const grupoId=uid(); const hoje=new Date().toISOString().slice(0,10);
+    selecionados.forEach((b,i)=>propostas.push({id:uid(),grupoId,contarNoVolume:false,solicitacaoId:s.id,clienteId:cliente.id,parceiroId:'',corretor:s.corretor||'',banco:b,plataforma:PLATAFORMAS[0],numeroProposta:'',status:'ATIVO',funil:FUNIL_STAGES[0],dataCriacao:hoje,dataFollowUp:'',observacao:s.observacao||'',valorImovel:s.valorCompra||s.valorImovel||'',recProprios:s.entrada||'',fgts:s.fgts||'0',valorFinanciado:Math.max(0,(Number(s.valorCompra||s.valorImovel)||0)-(Number(s.entrada)||0)-(Number(s.fgts)||0)),valorAvaliacaoBanco:'',itbi:'',prazoAcordado:parseInt(s.prazo)||'',taxaAcordada:'',valorIQ:'',emitido:false,dataEmissao:'',kanbanEtapaId:'',kanbanHistory:[]}));
+    s.status='Processada'; await Promise.all([savePropostas(),saveSolicitacoes()]); closeModal('sol-bancos-modal-wrap'); renderAll(); goToTab('propostas'); showToast(`${selecionados.length} PROPOSTA(S) CRIADA(S) E VINCULADA(S) À MESMA OPERAÇÃO.`);
   };
 
   // ================= CLIENTES =================
@@ -2123,14 +2312,21 @@
           <th class="sortable" onclick="setParSort('tipo')">Tipo${sortArrow(parSort, 'tipo')}</th>
           <th class="sortable" onclick="setParSort('contato')">Contato${sortArrow(parSort, 'contato')}</th>
           <th class="sortable" onclick="setParSort('percentualPadrao')">% padrão repasse${sortArrow(parSort, 'percentualPadrao')}</th>
+          <th>Potencial</th>
+          <th>Etapa comercial</th>
+          <th>Próx. follow-up</th>
           <th class="sortable" onclick="setParSort('status')">Status${sortArrow(parSort, 'status')}</th>
           <th class="sortable" onclick="setParSort('propostas')">Propostas${sortArrow(parSort, 'propostas')}</th>
           <th></th></tr></thead>
         <tbody>${rows.map(p => `<tr>
           <td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.tipo || '—')}</td><td>${escapeHtml(p.contato || '—')}</td><td>${p.percentualPadrao ? p.percentualPadrao + '%' : '—'}</td>
+          <td>${commercialPotBadge(p.potencial || 'B')}</td>
+          <td>${commercialStageBadge(p.etapaComercial || (p.status === 'INATIVO' ? 'INATIVO' : 'A PROSPECTAR'))}</td>
+          <td>${fmtDate(p.proximoFollowUp)}</td>
           <td>${badgeStatus(p.status || 'ATIVO')}</td>
           <td>${propostas.filter(x => x.parceiroId === p.id).length}</td>
           <td class="row-actions">
+            <button class="icon-btn" onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus" style="font-size:12px;"></i>Contato</button>
             <button class="icon-btn" onclick="openPartnerForm('${p.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
             <button class="icon-btn danger" onclick="deletePartner('${p.id}')"><i class="ti ti-trash" style="font-size:12px;"></i></button>
           </td></tr>`).join('')}</tbody>`
@@ -2150,43 +2346,325 @@
   };
   window.openPartnerForm = function (id) {
     const editing = id ? parceiros.find(p => p.id === id) : null;
-    const p = editing || { id: uid(), nome: '', tipo: 'Imobiliária', contato: '', percentualPadrao: '', status: 'ATIVO', email: '', cnpj: '', bancoDeposito: '', agencia: '', conta: '', chavePix: '' };
+    const p = editing || {
+      id: uid(), nome: '', tipo: 'Imobiliária', contato: '', percentualPadrao: '', status: 'ATIVO', email: '',
+      cnpj: '', bancoDeposito: '', agencia: '', conta: '', chavePix: '',
+      origemComercial: 'BASE ANTIGA', perfilComercial: 'FINANCIAMENTO', cidade: '', regiao: '',
+      potencial: 'B', etapaComercial: 'A PROSPECTAR', ultimoContato: '', proximoFollowUp: '',
+      proximaAcao: '', motivoInatividade: '', historicoComercial: []
+    };
     const wrap = $('#partner-modal-wrap');
+    const tipos = ['Imobiliária','Corretor autônomo','Construtora','Contador','BPO / Consultoria','Outro'];
+    const origens = ['BASE ANTIGA','INDICAÇÃO','PROSPECÇÃO','INSTAGRAM','EVENTO','GEOLOCALIZAÇÃO','OUTRO'];
+    const perfis = ['FINANCIAMENTO','ALTO PADRÃO','HOME EQUITY','FINANCIAMENTO + HOME EQUITY','OUTRO'];
+    const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
     wrap.innerHTML = `
-      <div class="modal">
+      <div class="modal" style="max-width:900px;">
         <p class="card-title">${editing ? 'Editar parceiro' : 'Novo parceiro'}</p>
         <div class="form-grid">
           <div class="field field-full"><label>Nome</label><input id="p-nome" value="${escapeHtml(p.nome)}" /></div>
-          <div class="field"><label>Tipo</label><select id="p-tipo"><option value="Imobiliária" ${p.tipo === 'Imobiliária' ? 'selected' : ''}>Imobiliária</option><option value="Corretor autônomo" ${p.tipo === 'Corretor autônomo' ? 'selected' : ''}>Corretor autônomo</option></select></div>
-          <div class="field"><label>Contato</label><input id="p-contato" value="${escapeHtml(p.contato)}" /></div>
-          <div class="field"><label>% padrão de repasse</label><input type="number" step="0.01" id="p-percentualPadrao" value="${p.percentualPadrao}" /></div>
-          <div class="field"><label>Status</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
-          <div class="field field-full"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
+          <div class="field"><label>Tipo</label><select id="p-tipo">${tipos.map(x=>`<option value="${x}" ${p.tipo===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="field"><label>Contato / WhatsApp</label><input id="p-contato" value="${escapeHtml(p.contato || '')}" /></div>
+          <div class="field"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
+          <div class="field"><label>Status cadastro</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
         </div>
-        <hr style="border:none; border-top:1px solid var(--ac-border); margin:14px 0;">
-        <p class="card-title" style="font-size:11.5px;"><i class="ti ti-building-bank"></i>Dados bancários (para o recibo de comissão)</p>
+
+        <hr style="border:none;border-top:1px solid var(--ac-border);margin:14px 0;">
+        <p class="card-title" style="font-size:11.5px;"><i class="ti ti-target-arrow"></i>CRM Comercial</p>
         <div class="form-grid">
+          <div class="field"><label>Origem</label><select id="p-origemComercial">${origens.map(x=>`<option value="${x}" ${(p.origemComercial||'BASE ANTIGA')===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="field"><label>Perfil / foco</label><select id="p-perfilComercial">${perfis.map(x=>`<option value="${x}" ${(p.perfilComercial||'FINANCIAMENTO')===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="field"><label>Cidade</label><input id="p-cidade" value="${escapeHtml(p.cidade || '')}" /></div>
+          <div class="field"><label>Região / bairro</label><input id="p-regiao" value="${escapeHtml(p.regiao || '')}" /></div>
+          <div class="field"><label>Potencial</label><select id="p-potencial"><option value="A" ${p.potencial==='A'?'selected':''}>A · ALTO</option><option value="B" ${(p.potencial||'B')==='B'?'selected':''}>B · MÉDIO</option><option value="C" ${p.potencial==='C'?'selected':''}>C · BAIXO</option></select></div>
+          <div class="field"><label>Etapa comercial</label><select id="p-etapaComercial">${etapas.map(x=>`<option value="${x}" ${(p.etapaComercial||'A PROSPECTAR')===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="field"><label>Último contato</label><input type="date" id="p-ultimoContato" value="${p.ultimoContato || ''}" /></div>
+          <div class="field"><label>Próximo follow-up</label><input type="date" id="p-proximoFollowUp" value="${p.proximoFollowUp || ''}" /></div>
+          <div class="field field-full"><label>Próxima ação</label><input id="p-proximaAcao" value="${escapeHtml(p.proximaAcao || '')}" placeholder="EX.: LIGAR, ENVIAR RADAR, MARCAR CAFÉ, APRESENTAR HOME EQUITY" /></div>
+          <div class="field field-full"><label>Motivo de inatividade / observação comercial</label><textarea id="p-motivoInatividade" rows="2">${escapeHtml(p.motivoInatividade || '')}</textarea></div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--ac-border);margin:14px 0;">
+        <p class="card-title" style="font-size:11.5px;"><i class="ti ti-percentage"></i>Repasse e dados bancários</p>
+        <div class="form-grid">
+          <div class="field"><label>% padrão de repasse</label><input type="number" step="0.01" id="p-percentualPadrao" value="${p.percentualPadrao || ''}" /></div>
           <div class="field"><label>CNPJ / CPF</label><input id="p-cnpj" value="${escapeHtml(p.cnpj || '')}" /></div>
           <div class="field"><label>Banco</label><input id="p-bancoDeposito" value="${escapeHtml(p.bancoDeposito || '')}" /></div>
           <div class="field"><label>Agência</label><input id="p-agencia" value="${escapeHtml(p.agencia || '')}" /></div>
           <div class="field"><label>Conta</label><input id="p-conta" value="${escapeHtml(p.conta || '')}" /></div>
           <div class="field"><label>Chave PIX</label><input id="p-chavePix" value="${escapeHtml(p.chavePix || '')}" /></div>
         </div>
-        <p id="p-error" style="font-size:12px; color:var(--ac-red); display:none;"></p>
+        <p id="p-error" style="font-size:12px;color:var(--ac-red);display:none;"></p>
         <div class="modal-actions"><button onclick="closeModal('partner-modal-wrap')">Cancelar</button><button onclick="savePartnerForm('${p.id}')">Salvar</button></div>
       </div>`;
     wrap.classList.add('open');
   };
+
   window.savePartnerForm = function (id) {
     const nome = $('#p-nome').value.trim();
     if (!nome) { $('#p-error').textContent = 'INFORME O NOME DO PARCEIRO.'; $('#p-error').style.display = 'block'; return; }
-    const data = {
-      id, nome, tipo: $('#p-tipo').value, contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: $('#p-status').value,
+    const existing = parceiros.find(p => p.id === id) || {};
+    const etapaComercial = $('#p-etapaComercial').value;
+    const statusNormalizado = etapaComercial === 'INATIVO' ? 'INATIVO' : (etapaComercial === 'PRODUTOR' ? 'ATIVO' : $('#p-status').value);
+    const data = Object.assign({}, existing, {
+      id, nome, tipo: $('#p-tipo').value, contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: statusNormalizado,
       email: $('#p-email').value.trim(), cnpj: $('#p-cnpj').value.trim(), bancoDeposito: $('#p-bancoDeposito').value.trim(), agencia: $('#p-agencia').value.trim(), conta: $('#p-conta').value.trim(), chavePix: $('#p-chavePix').value.trim(),
-    };
+      origemComercial: $('#p-origemComercial').value, perfilComercial: $('#p-perfilComercial').value, cidade: $('#p-cidade').value.trim(), regiao: $('#p-regiao').value.trim(),
+      potencial: $('#p-potencial').value, etapaComercial: etapaComercial, ultimoContato: $('#p-ultimoContato').value,
+      proximoFollowUp: $('#p-proximoFollowUp').value, proximaAcao: $('#p-proximaAcao').value.trim(), motivoInatividade: $('#p-motivoInatividade').value.trim(),
+      historicoComercial: existing.historicoComercial || []
+    });
     const idx = parceiros.findIndex(p => p.id === id);
     if (idx >= 0) parceiros[idx] = data; else parceiros.push(data);
     saveParceiros(); closeModal('partner-modal-wrap'); renderAll();
+  };
+
+  // ================= CRM COMERCIAL =================
+  function commercialStageBadge(stage) {
+    const colors = {
+      'A PROSPECTAR':['#EEF1F4','#475569'], 'PRIMEIRO CONTATO':['#FCEACB','#8A6116'],
+      'CONTATO REALIZADO':['#DCEBFA','#1D6FA8'], 'REUNIÃO AGENDADA':['#E9E1F5','#6B4FA0'],
+      'REUNIÃO REALIZADA':['#DCEEE2','#1F6B3F'], 'EM RELACIONAMENTO':['#D9E1EE','#1B3A63'],
+      'PRODUTOR':['#CFEBDD','#17603A'], 'INATIVO':['#F4DEDA','#A23B32']
+    };
+    const c = colors[stage] || ['#EEF1F4','#475569'];
+    return `<span class="badge" style="background:${c[0]};color:${c[1]};">${escapeHtml(stage || 'A PROSPECTAR')}</span>`;
+  }
+  function commercialPotBadge(pot) {
+    const c = pot==='A' ? ['#DCEEE2','#1F6B3F'] : pot==='C' ? ['#F4DEDA','#A23B32'] : ['#FCEACB','#8A6116'];
+    return `<span class="badge" style="background:${c[0]};color:${c[1]};">${escapeHtml(pot || 'B')}</span>`;
+  }
+  function partnerCommercialStats(p) {
+    const ps = propostas.filter(x => x.parceiroId === p.id);
+    const clientesIds = new Set(ps.map(x=>x.clienteId).filter(Boolean));
+    const efet = ps.filter(x => x.funil === 'EFETIVADO' || x.funil === 'FINALIZADO');
+    const vol = efet.filter(x => x.contarNoVolume !== false).reduce((a,x)=>a+(Number(x.valorFinanciado)||0),0);
+    const receita = efet.reduce((a,x)=>a+(typeof comissaoCalculada==='function'?comissaoCalculada(x):0),0);
+    return { propostas: ps.length, leads: clientesIds.size, efetivadas: efet.length, volume: vol, receita };
+  }
+  function daysFromToday(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr+'T12:00:00'), t = new Date(); t.setHours(12,0,0,0);
+    return Math.round((d-t)/86400000);
+  }
+  function renderComercialFilters() {
+    const el = $('#comercial-filters'); if (!el) return;
+    const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
+    const tipos = [...new Set(parceiros.map(p=>p.tipo).filter(Boolean))].sort();
+    el.innerHTML = `
+      <div class="field"><label>Etapa</label><select id="cf-etapa"><option value="">Todas</option>${etapas.map(x=>`<option value="${x}" ${comercialFilters.etapa===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Potencial</label><select id="cf-potencial"><option value="">Todos</option>${['A','B','C'].map(x=>`<option value="${x}" ${comercialFilters.potencial===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Tipo</label><select id="cf-tipo"><option value="">Todos</option>${tipos.map(x=>`<option value="${escapeHtml(x)}" ${comercialFilters.tipo===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
+      <div class="field"><label>Follow-up</label><select id="cf-prazo"><option value="TODOS">Todos</option><option value="ATRASADO" ${comercialFilters.prazo==='ATRASADO'?'selected':''}>Atrasados</option><option value="HOJE" ${comercialFilters.prazo==='HOJE'?'selected':''}>Hoje</option><option value="7DIAS" ${comercialFilters.prazo==='7DIAS'?'selected':''}>Próximos 7 dias</option><option value="SEM" ${comercialFilters.prazo==='SEM'?'selected':''}>Sem follow-up</option></select></div>
+      <button onclick="clearComercialFilters()"><i class="ti ti-x"></i> Limpar</button>`;
+    ['etapa','potencial','tipo','prazo'].forEach(k=>{
+      const x=$('#cf-'+k); if(x) x.addEventListener('change',e=>{comercialFilters[k]=e.target.value;renderComercial();});
+    });
+  }
+  window.clearComercialFilters = function(){ comercialFilters={etapa:'',potencial:'',tipo:'',prazo:'TODOS'}; renderComercial(); };
+
+  function commercialFilteredPartners() {
+    return parceiros.filter(p=>{
+      const stage=p.etapaComercial || (p.status==='INATIVO'?'INATIVO':'A PROSPECTAR');
+      if(comercialFilters.etapa && stage!==comercialFilters.etapa) return false;
+      if(comercialFilters.potencial && (p.potencial||'B')!==comercialFilters.potencial) return false;
+      if(comercialFilters.tipo && p.tipo!==comercialFilters.tipo) return false;
+      const d=daysFromToday(p.proximoFollowUp);
+      if(comercialFilters.prazo==='ATRASADO' && !(d!==null && d<0)) return false;
+      if(comercialFilters.prazo==='HOJE' && d!==0) return false;
+      if(comercialFilters.prazo==='7DIAS' && !(d!==null && d>=0 && d<=7)) return false;
+      if(comercialFilters.prazo==='SEM' && p.proximoFollowUp) return false;
+      return true;
+    });
+  }
+
+  function commercialKanbanGroup(p){
+    const e=(p.etapaComercial||'A PROSPECTAR').toUpperCase();
+    if(e==='INATIVO') return 'INATIVO';
+    if(e==='PRODUTOR') return 'PRODUTOR';
+    if(['REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO'].includes(e)) return 'EM RELACIONAMENTO';
+    if(['PRIMEIRO CONTATO','CONTATO REALIZADO'].includes(e)) return 'EM CONTATO';
+    return 'A PROSPECTAR';
+  }
+
+  function renderCommercialKanban(){
+    const el=$('#commercial-kanban'); if(!el) return;
+    const defs=[
+      {key:'A PROSPECTAR',label:'A prospectar',save:'A PROSPECTAR'},
+      {key:'EM CONTATO',label:'Em contato',save:'CONTATO REALIZADO'},
+      {key:'EM RELACIONAMENTO',label:'Em relacionamento',save:'EM RELACIONAMENTO'},
+      {key:'PRODUTOR',label:'Produtor',save:'PRODUTOR'}
+    ];
+    const ativos=parceiros.filter(p=>commercialKanbanGroup(p)!=='INATIVO');
+    el.innerHTML=defs.map(d=>{
+      const items=ativos.filter(p=>commercialKanbanGroup(p)===d.key)
+        .sort((a,b)=>(a.proximoFollowUp||'9999').localeCompare(b.proximoFollowUp||'9999'));
+      return `<div class="commercial-kanban-col" data-stage="${d.save}">
+        <div class="commercial-kanban-head"><span>${d.label}</span><span class="badge">${items.length}</span></div>
+        <div class="commercial-kanban-list">${items.map(p=>{
+          const dias=daysFromToday(p.proximoFollowUp);
+          const cls=dias!==null&&dias<0?'overdue':dias===0?'today':'';
+          const st=partnerCommercialStats(p);
+          return `<div class="commercial-kanban-card ${cls}" draggable="true" data-partner-id="${p.id}">
+            <div class="ck-title"><span>${escapeHtml(p.nome)}</span>${commercialPotBadge(p.potencial||'B')}</div>
+            <div class="ck-meta">${escapeHtml(p.tipo||'PARCEIRO')}${p.regiao?' · '+escapeHtml(p.regiao):''}</div>
+            <div class="ck-action"><strong>Próxima ação:</strong> ${escapeHtml(p.proximaAcao||'DEFINIR PRÓXIMA AÇÃO')}</div>
+            <div class="ck-meta"><strong>Follow-up:</strong> ${p.proximoFollowUp?fmtDate(p.proximoFollowUp):'SEM DATA'} · Leads: ${st.leads} · Efet.: ${st.efetivadas}</div>
+            <div class="ck-actions"><button onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus"></i> Contato</button><button onclick="openCommercialHistory('${p.id}')"><i class="ti ti-history"></i></button></div>
+          </div>`;
+        }).join('')||'<div class="muted" style="font-size:9.5px;padding:10px 3px;">Nenhum parceiro nesta etapa.</div>'}</div>
+      </div>`;
+    }).join('');
+
+    el.querySelectorAll('.commercial-kanban-card').forEach(card=>{
+      card.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',card.dataset.partnerId);e.dataTransfer.effectAllowed='move';});
+    });
+    el.querySelectorAll('.commercial-kanban-col').forEach(col=>{
+      col.addEventListener('dragover',e=>{e.preventDefault();col.classList.add('drag-over');});
+      col.addEventListener('dragleave',()=>col.classList.remove('drag-over'));
+      col.addEventListener('drop',async e=>{
+        e.preventDefault(); col.classList.remove('drag-over');
+        const id=e.dataTransfer.getData('text/plain'); const p=parceiros.find(x=>x.id===id); if(!p)return;
+        const nova=col.dataset.stage;
+        p.etapaComercial=nova;
+        p.status='ATIVO';
+        await saveParceiros();
+        renderComercial();
+      });
+    });
+  }
+
+  function renderComercial() {
+    const metrics=$('#comercial-metrics'); if(!metrics) return;
+    renderComercialFilters();
+    renderCommercialKanban();
+    const all=parceiros;
+    const hoje=new Date().toISOString().slice(0,10);
+    const atrasados=all.filter(p=>p.proximoFollowUp && p.proximoFollowUp<hoje && (p.etapaComercial||'')!=='INATIVO').length;
+    const hojeN=all.filter(p=>p.proximoFollowUp===hoje).length;
+    const produtores=all.filter(p=>(p.etapaComercial||'')==='PRODUTOR').length;
+    const potencialA=all.filter(p=>(p.potencial||'B')==='A' && (p.etapaComercial||'')!=='INATIVO').length;
+    metrics.innerHTML=`
+      <div class="metric"><p class="metric-label">Parceiros cadastrados</p><p class="metric-value">${all.length}</p></div>
+      <div class="metric"><p class="metric-label">Produtores</p><p class="metric-value">${produtores}</p></div>
+      <div class="metric"><p class="metric-label">Potencial A</p><p class="metric-value">${potencialA}</p></div>
+      <div class="metric"><p class="metric-label">Follow-ups hoje</p><p class="metric-value">${hojeN}</p></div>
+      <div class="metric"><p class="metric-label">Follow-ups atrasados</p><p class="metric-value" style="${atrasados?'color:#A23B32':''}">${atrasados}</p></div>`;
+
+    const follow = parceiros.filter(p=>p.proximoFollowUp).slice().sort((a,b)=>a.proximoFollowUp.localeCompare(b.proximoFollowUp));
+    const ft=$('#comercial-followup-table');
+    ft.innerHTML=follow.length?`<thead><tr><th>Data</th><th>Parceiro</th><th>Pot.</th><th>Etapa</th><th>Próxima ação</th><th></th></tr></thead><tbody>${follow.map(p=>{
+      const d=daysFromToday(p.proximoFollowUp); const cor=d<0?'#A23B32':d===0?'#A7752B':'';
+      return `<tr><td style="font-weight:700;color:${cor||'inherit'}">${fmtDate(p.proximoFollowUp)}</td><td>${escapeHtml(p.nome)}</td><td>${commercialPotBadge(p.potencial||'B')}</td><td>${commercialStageBadge(p.etapaComercial||'A PROSPECTAR')}</td><td>${escapeHtml(p.proximaAcao||'—')}</td><td class="row-actions"><button class="icon-btn" onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus"></i>Contato</button><button class="icon-btn" onclick="openCommercialHistory('${p.id}')"><i class="ti ti-history"></i></button></td></tr>`;
+    }).join('')}</tbody>`:`<tr><td class="empty">Nenhum follow-up agendado.</td></tr>`;
+
+    const rows=commercialFilteredPartners().slice().sort((a,b)=>(a.proximoFollowUp||'9999').localeCompare(b.proximoFollowUp||'9999'));
+    const ct=$('#comercial-carteira-table');
+    ct.innerHTML=rows.length?`<thead><tr><th>Parceiro</th><th>Tipo</th><th>Região</th><th>Pot.</th><th>Etapa</th><th>Último contato</th><th>Próx. follow-up</th><th>Leads</th><th>Efet.</th><th>Volume</th><th></th></tr></thead><tbody>${rows.map(p=>{
+      const st=partnerCommercialStats(p);
+      return `<tr><td><strong>${escapeHtml(p.nome)}</strong><div class="muted" style="font-size:9.5px">${escapeHtml(p.perfilComercial||'')}</div></td><td>${escapeHtml(p.tipo||'—')}</td><td>${escapeHtml([p.cidade,p.regiao].filter(Boolean).join(' · ')||'—')}</td><td>${commercialPotBadge(p.potencial||'B')}</td><td>${commercialStageBadge(p.etapaComercial||(p.status==='INATIVO'?'INATIVO':'A PROSPECTAR'))}</td><td>${fmtDate(p.ultimoContato)}</td><td>${fmtDate(p.proximoFollowUp)}</td><td>${st.leads}</td><td>${st.efetivadas}</td><td>${fmtMoney(st.volume)}</td><td class="row-actions"><button class="icon-btn" onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus"></i>Contato</button><button class="icon-btn" onclick="openCommercialHistory('${p.id}')"><i class="ti ti-history"></i></button><button class="icon-btn" onclick="openPartnerForm('${p.id}')"><i class="ti ti-edit"></i></button></td></tr>`;
+    }).join('')}</tbody>`:`<tr><td class="empty">Nenhum parceiro com estes filtros.</td></tr>`;
+  }
+
+  window.openCommercialContact = function(id) {
+    const p=parceiros.find(x=>x.id===id); if(!p) return;
+    const wrap=$('#commercial-contact-modal-wrap');
+    const hoje=new Date().toISOString().slice(0,10);
+    wrap.innerHTML=`<div class="modal modal-compact">
+      <p class="card-title"><i class="ti ti-message-plus"></i>Registrar contato · ${escapeHtml(p.nome)}</p>
+      <div class="form-grid">
+        <div class="field"><label>Data</label><input type="date" id="cc-data" value="${hoje}"></div>
+        <div class="field"><label>Canal</label><select id="cc-canal"><option>WHATSAPP</option><option>LIGAÇÃO</option><option>VISITA</option><option>REUNIÃO</option><option>INSTAGRAM</option><option>E-MAIL</option><option>OUTRO</option></select></div>
+        <div class="field field-full"><label>O que foi conversado</label><textarea id="cc-nota" rows="4" placeholder="REGISTRE O QUE FOI DITO, NECESSIDADE, OPORTUNIDADE OU COMBINADO."></textarea></div>
+        <div class="field"><label>Nova etapa</label><select id="cc-etapa">${['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'].map(x=>`<option value="${x}" ${(p.etapaComercial||'A PROSPECTAR')===x?'selected':''}>${x}</option>`).join('')}</select></div>
+        <div class="field"><label>Próximo follow-up</label><input type="date" id="cc-follow" value="${p.proximoFollowUp||''}"></div>
+        <div class="field field-full"><label>Próxima ação</label><input id="cc-acao" value="${escapeHtml(p.proximaAcao||'')}"></div>
+      </div>
+      <div class="modal-actions"><button onclick="closeModal('commercial-contact-modal-wrap')">Cancelar</button><button id="cc-save-btn" onclick="saveCommercialContact('${p.id}')">Salvar contato</button></div>
+    </div>`;
+    wrap.classList.add('open');
+  };
+  window.saveCommercialContact = async function(id) {
+    const p=parceiros.find(x=>x.id===id); if(!p) return;
+    const btn=$('#cc-save-btn');
+    if(btn && btn.disabled) return;
+
+    const nota=$('#cc-nota').value.trim();
+    if(!nota){ alert('REGISTRE O QUE FOI CONVERSADO.'); return; }
+
+    const novo = {
+      data: $('#cc-data').value,
+      canal: $('#cc-canal').value,
+      nota,
+      etapa: $('#cc-etapa').value,
+      proximaAcao: $('#cc-acao').value.trim(),
+      proximoFollowUp: $('#cc-follow').value
+    };
+
+    p.historicoComercial=p.historicoComercial||[];
+
+    // Evita duplicidade causada por clique repetido ou demora na gravação.
+    const duplicado = p.historicoComercial.some(h =>
+      (h.data||'') === novo.data &&
+      (h.canal||'') === novo.canal &&
+      (h.nota||'').trim() === novo.nota &&
+      (h.etapa||'') === novo.etapa &&
+      (h.proximaAcao||'').trim() === novo.proximaAcao &&
+      (h.proximoFollowUp||'') === novo.proximoFollowUp
+    );
+    if(duplicado){
+      alert('ESTE CONTATO JÁ FOI REGISTRADO. NENHUMA DUPLICIDADE FOI CRIADA.');
+      return;
+    }
+
+    if(btn){ btn.disabled=true; btn.textContent='Salvando...'; }
+    try {
+      p.historicoComercial.push(Object.assign({id:uid(),criadoEm:new Date().toISOString()}, novo));
+      p.ultimoContato=novo.data;
+      p.etapaComercial=novo.etapa;
+      p.proximoFollowUp=novo.proximoFollowUp;
+      p.proximaAcao=novo.proximaAcao;
+
+      // Regra comercial: PRODUTOR é sempre ATIVO; só INATIVO fica inativo.
+      if(p.etapaComercial==='INATIVO') p.status='INATIVO';
+      else p.status='ATIVO';
+
+      await saveParceiros();
+      closeModal('commercial-contact-modal-wrap'); renderAll();
+    } catch(err) {
+      // Remove o lançamento local se a gravação falhar, permitindo nova tentativa.
+      p.historicoComercial = p.historicoComercial.filter(h => h.id !== (p.historicoComercial[p.historicoComercial.length-1]||{}).id);
+      if(btn){ btn.disabled=false; btn.textContent='Salvar contato'; }
+      alert('NÃO FOI POSSÍVEL SALVAR O CONTATO. TENTE NOVAMENTE.');
+      throw err;
+    }
+  };
+  window.openCommercialHistory = function(id) {
+    const p=parceiros.find(x=>x.id===id); if(!p) return;
+    const hist=(p.historicoComercial||[]).slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+    const wrap=$('#commercial-history-modal-wrap');
+    wrap.innerHTML=`<div class="modal" style="max-width:780px;"><p class="card-title"><i class="ti ti-history"></i>Histórico comercial · ${escapeHtml(p.nome)}</p>
+      <div style="max-height:55vh;overflow:auto;">${hist.length?hist.map(h=>`<div style="border:1px solid var(--ac-border);border-radius:8px;padding:10px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;"><strong>${fmtDate(h.data)} · ${escapeHtml(h.canal||'CONTATO')}</strong><div style="display:flex;gap:6px;align-items:center;">${commercialStageBadge(h.etapa||'')}<button class="icon-btn" title="Excluir histórico" onclick="deleteCommercialHistory('${p.id}','${h.id}')"><i class="ti ti-trash"></i></button></div></div><div style="margin-top:7px;font-size:12px;white-space:pre-wrap;">${escapeHtml(h.nota||'')}</div>${h.proximaAcao?`<div class="muted" style="margin-top:7px;font-size:10.5px;"><strong>Próxima ação:</strong> ${escapeHtml(h.proximaAcao)} ${h.proximoFollowUp?'· '+fmtDate(h.proximoFollowUp):''}</div>`:''}</div>`).join(''):'<p class="empty">Nenhum contato registrado ainda.</p>'}</div>
+      <div class="modal-actions"><button onclick="closeModal('commercial-history-modal-wrap')">Fechar</button><button onclick="closeModal('commercial-history-modal-wrap');openCommercialContact('${p.id}')">Registrar contato</button></div></div>`;
+    wrap.classList.add('open');
+  };
+
+  window.deleteCommercialHistory = async function(partnerId, historyId) {
+    const p=parceiros.find(x=>x.id===partnerId); if(!p) return;
+    const hist=p.historicoComercial||[];
+    const item=hist.find(h=>h.id===historyId); if(!item) return;
+    if(!confirm('EXCLUIR ESTE REGISTRO DO HISTÓRICO COMERCIAL?')) return;
+
+    p.historicoComercial=hist.filter(h=>h.id!==historyId);
+
+    // Recalcula o último contato a partir do histórico restante.
+    const restante=p.historicoComercial.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''));
+    p.ultimoContato=restante.length ? (restante[0].data||'') : '';
+
+    await saveParceiros();
+    closeModal('commercial-history-modal-wrap');
+    renderAll();
+    openCommercialHistory(partnerId);
   };
 
   // ================= BANCOS =================
@@ -2279,8 +2757,14 @@
       $('#bk-logo-preview').style.display = 'inline-block';
     });
     window.saveBancoForm = async function (idArg) {
-      const nome = $('#bk-nome').value.trim();
+      const nome = $('#bk-nome').value.trim().toUpperCase();
       if (!nome) { $('#bk-error').textContent = 'INFORME O NOME DO BANCO.'; $('#bk-error').style.display = 'block'; return; }
+      const duplicado = bancos.find(x => x.id !== idArg && bancoNomeChave(x.nome) === bancoNomeChave(nome));
+      if (duplicado) {
+        $('#bk-error').textContent = 'ESTE BANCO JÁ ESTÁ CADASTRADO. EDITE O CADASTRO EXISTENTE.';
+        $('#bk-error').style.display = 'block';
+        return;
+      }
       const data = { id: idArg, nome, percentualComissao: $('#bk-percentual').value, logo: pendingLogo };
       const idx = bancos.findIndex(x => x.id === idArg);
       if (idx >= 0) bancos[idx] = data; else bancos.push(data);
@@ -2595,23 +3079,23 @@
     if (p) p.comissaoData = valor;
     await savePropostas();
   };
-  let finFilters = { dataDe: '', dataAte: '' };
+  let finFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', parceiroId: '' };
   function renderFinFilters() {
+    const years = distinctYears();
     $('#fin-filters').innerHTML = `
-      <div class="field"><label>Data de emissão (de)</label><input type="date" id="ff-de" value="${finFilters.dataDe}" /></div>
-      <div class="field"><label>Data de emissão (até)</label><input type="date" id="ff-ate" value="${finFilters.dataAte}" /></div>
-      <div class="field"><label>Alíquota de impostos (%)</label><input type="number" step="0.01" id="ff-aliquota" value="${aliquotaImposto}" style="width:110px;" /></div>
-      <button onclick="clearFinFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
-    `;
-    $('#ff-de').addEventListener('change', e => { finFilters.dataDe = e.target.value; renderFinanceiro(); });
-    $('#ff-ate').addEventListener('change', e => { finFilters.dataAte = e.target.value; renderFinanceiro(); });
-    $('#ff-aliquota').addEventListener('change', async e => {
-      aliquotaImposto = parseFloat(e.target.value) || 0;
-      await safeSet('adtacred:aliquota-imposto', String(aliquotaImposto));
-      renderFinanceiro();
-    });
+      <div class="field"><label>Ano</label><select id="ff-ano"><option value="">Todos</option>${years.map(y=>`<option value="${y}" ${finFilters.ano===y?'selected':''}>${y}</option>`).join('')}</select></div>
+      <div class="field"><label>Mês</label><select id="ff-mes"><option value="">Todos</option>${MESES.map((m,i)=>{const v=String(i+1).padStart(2,'0');return `<option value="${v}" ${finFilters.mes===v?'selected':''}>${m}</option>`;}).join('')}</select></div>
+      <div class="field"><label>Status</label><select id="ff-status"><option value="">Todos</option><option value="ATIVO" ${finFilters.status==='ATIVO'?'selected':''}>Ativo</option><option value="INATIVO" ${finFilters.status==='INATIVO'?'selected':''}>Inativo</option></select></div>
+      <div class="field"><label>Parceiro</label><select id="ff-parceiro"><option value="">Todos</option>${parceiros.map(pa=>`<option value="${pa.id}" ${finFilters.parceiroId===pa.id?'selected':''}>${escapeHtml(pa.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label>Alíquota impostos (%)</label><input type="number" step="0.01" id="ff-aliquota" value="${aliquotaImposto}" style="width:110px;" /></div>
+      <button onclick="clearFinFilters()"><i class="ti ti-x" style="font-size:12px;margin-right:4px;"></i>Limpar</button>`;
+    $('#ff-ano').addEventListener('change',e=>{finFilters.ano=e.target.value;renderFinanceiro();});
+    $('#ff-mes').addEventListener('change',e=>{finFilters.mes=e.target.value;renderFinanceiro();});
+    $('#ff-status').addEventListener('change',e=>{finFilters.status=e.target.value;renderFinanceiro();});
+    $('#ff-parceiro').addEventListener('change',e=>{finFilters.parceiroId=e.target.value;renderFinanceiro();});
+    $('#ff-aliquota').addEventListener('change',async e=>{aliquotaImposto=parseFloat(e.target.value)||0;await safeSet('adtacred:aliquota-imposto',String(aliquotaImposto));renderFinanceiro();});
   }
-  window.clearFinFilters = function () { finFilters = { dataDe: '', dataAte: '' }; renderFinanceiro(); };
+  window.clearFinFilters = function(){ finFilters={ano:String(new Date().getFullYear()),mes:'',status:'ATIVO',parceiroId:''}; renderFinanceiro(); };
 
   function repasseParceiroCalculado(p) {
     if (p.pagarComissaoParceiro === false) return 0;
@@ -2630,8 +3114,10 @@
   function renderFinanceiro() {
     renderFinFilters();
     let emitidas = propostas.filter(p => p.emitido);
-    if (finFilters.dataDe) emitidas = emitidas.filter(p => p.dataEmissao && p.dataEmissao >= finFilters.dataDe);
-    if (finFilters.dataAte) emitidas = emitidas.filter(p => p.dataEmissao && p.dataEmissao <= finFilters.dataAte);
+    if (finFilters.ano) emitidas = emitidas.filter(p => (p.dataEmissao || p.dataCriacao || '').slice(0,4) === finFilters.ano);
+    if (finFilters.mes) emitidas = emitidas.filter(p => (p.dataEmissao || p.dataCriacao || '').slice(5,7) === finFilters.mes);
+    if (finFilters.status) emitidas = emitidas.filter(p => (p.status || '') === finFilters.status);
+    if (finFilters.parceiroId) emitidas = emitidas.filter(p => p.parceiroId === finFilters.parceiroId);
 
     const totalFinanciado = emitidas.reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
     const totalBruto = emitidas.reduce((s, p) => s + comissaoCalculada(p), 0);
@@ -2670,7 +3156,11 @@
         </tr>`; }).join('')}</tbody>`
       : `<tr><td class="empty">Nenhuma proposta emitida encontrada para o período.</td></tr>`;
 
-    const emProducao = propostas.filter(p => p.funil === 'PRODUÇÃO' && !p.emitido);
+    let emProducao = propostas.filter(p => p.funil === 'PRODUÇÃO' && !p.emitido);
+    if (finFilters.ano) emProducao = emProducao.filter(p => anoOf(p) === finFilters.ano);
+    if (finFilters.mes) emProducao = emProducao.filter(p => mesOf(p) === finFilters.mes);
+    if (finFilters.status) emProducao = emProducao.filter(p => (p.status || '') === finFilters.status);
+    if (finFilters.parceiroId) emProducao = emProducao.filter(p => p.parceiroId === finFilters.parceiroId);
     const estTbl = $('#fin-estimativa-table');
     estTbl.innerHTML = emProducao.length
       ? `<thead><tr><th>Cliente</th><th>Banco</th><th>Valor financiado</th><th>% comissão</th><th>Comissão estimada</th></tr></thead>
@@ -2678,6 +3168,33 @@
         <tfoot><tr><td colspan="4" style="text-align:right; font-weight:600;">Total estimado:</td><td style="font-weight:600;">${fmtMoney(emProducao.reduce((s, p) => s + comissaoCalculada(p), 0))}</td></tr></tfoot>`
       : `<tr><td class="empty">Nenhuma proposta em produção no momento.</td></tr>`;
   }
+
+
+  // ================= CENTRAL DO PARCEIRO =================
+  function renderMarketInfo() {
+    const u = document.getElementById('market-updated'); if (!u) return;
+    u.textContent = 'INFORMAÇÕES DE REFERÊNCIA · ATUALIZADO EM ' + fmtDate(marketInfo.atualizadoEm) + ' · CONDIÇÕES SUJEITAS À ANÁLISE E CONFIRMAÇÃO NA CONTRATAÇÃO.';
+    $('#market-banks').innerHTML = (marketInfo.bancos||[]).map(b=>`<div class="partner-market-card"><h3>${escapeHtml(b.nome)}</h3><p><b>Taxa:</b> ${escapeHtml(b.taxa)}</p><p><b>Indexador:</b> ${escapeHtml(b.indexador)}</p><p><b>Engenharia:</b> ${escapeHtml(b.engenharia)}</p></div>`).join('');
+    $('#market-modalidades').innerHTML = `<p style="font-size:11px;line-height:1.6;white-space:pre-line;">${escapeHtml(marketInfo.modalidades||'')}</p>`;
+    $('#market-indices').innerHTML = `<p style="font-size:11px;line-height:1.6;white-space:pre-line;">${escapeHtml(marketInfo.indices||'')}</p>`;
+    $('#market-faq').innerHTML = `<p style="font-size:11px;line-height:1.6;white-space:pre-line;">${escapeHtml(marketInfo.faq||'')}</p>`;
+  }
+  window.editMarketInfo = function(){
+    const wrap=$('#market-edit-modal-wrap');
+    wrap.innerHTML=`<div class="modal"><p class="card-title">Editar informações de mercado</p><div class="field"><label>Atualizado em</label><input type="date" id="mi-data" value="${marketInfo.atualizadoEm||''}"></div><p class="muted" style="font-size:10px;">Bancos — uma linha por banco no formato: BANCO | TAXA | INDEXADOR | ENGENHARIA</p><textarea id="mi-bancos" rows="7" style="width:100%;">${escapeHtml((marketInfo.bancos||[]).map(b=>[b.nome,b.taxa,b.indexador,b.engenharia].join(' | ')).join('\n'))}</textarea><div class="field"><label>Modalidades e condições</label><textarea id="mi-modalidades" rows="5">${escapeHtml(marketInfo.modalidades||'')}</textarea></div><div class="field"><label>Índices de mercado</label><textarea id="mi-indices" rows="5">${escapeHtml(marketInfo.indices||'')}</textarea></div><div class="field"><label>Dúvidas / avisos</label><textarea id="mi-faq" rows="5">${escapeHtml(marketInfo.faq||'')}</textarea></div><div class="modal-actions"><button onclick="closeModal('market-edit-modal-wrap')">Cancelar</button><button onclick="saveMarketInfoForm()">Salvar</button></div></div>`;
+    wrap.classList.add('open');
+  };
+  window.saveMarketInfoForm = async function(){
+    marketInfo.atualizadoEm=$('#mi-data').value||new Date().toISOString().slice(0,10);
+    marketInfo.bancos=$('#mi-bancos').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const a=l.split('|').map(x=>x.trim());return {nome:a[0]||'',taxa:a[1]||'',indexador:a[2]||'',engenharia:a[3]||''};});
+    marketInfo.modalidades=$('#mi-modalidades').value.trim(); marketInfo.indices=$('#mi-indices').value.trim(); marketInfo.faq=$('#mi-faq').value.trim();
+    await saveMarketInfo(); closeModal('market-edit-modal-wrap'); renderMarketInfo(); showToast('Informações de mercado atualizadas.');
+  };
+  window.openPartnerMarketPage = function(){
+    const banks=(marketInfo.bancos||[]).map(b=>`<div class="b"><h2>${escapeHtml(b.nome)}</h2><p><b>Taxa:</b> ${escapeHtml(b.taxa)}</p><p><b>Indexador:</b> ${escapeHtml(b.indexador)}</p><p><b>Engenharia:</b> ${escapeHtml(b.engenharia)}</p></div>`).join('');
+    const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>AdtaCred · Informações de mercado</title><style>body{font-family:Arial,sans-serif;color:#18332d;margin:0;background:#f6f7f4}.h{background:#0e4c42;color:#fff;padding:28px}.c{max-width:1050px;margin:auto;padding:24px}.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.b,.s{background:#fff;border:1px solid #d8ddd7;border-radius:10px;padding:16px}.b h2{font-size:17px}.s{margin-top:14px;white-space:pre-line;line-height:1.55}.note{font-size:12px;color:#667}.cta{display:inline-block;margin-top:18px;padding:12px 18px;background:#0e4c42;color:#fff;border-radius:7px;font-weight:bold}@media print{.cta{display:none}}</style></head><body><div class="h"><h1>AdtaCred · Mercado e Financiamento</h1><p>Informações para corretores parceiros</p></div><div class="c"><p class="note">Atualizado em ${fmtDate(marketInfo.atualizadoEm)}. Taxas e condições podem variar conforme score, rating, relacionamento, modalidade e análise do banco. Confirme as condições na contratação.</p><div class="g">${banks}</div><div class="s"><h2>Modalidades e condições</h2>${escapeHtml(marketInfo.modalidades||'')}</div><div class="s"><h2>Índices de mercado</h2>${escapeHtml(marketInfo.indices||'')}</div><div class="s"><h2>Dúvidas frequentes</h2>${escapeHtml(marketInfo.faq||'')}</div><div class="s"><h2>Processo</h2>CRÉDITO → ENGENHARIA → ANÁLISE JURÍDICA → EMISSÃO</div><button class="cta" onclick="window.print()">Imprimir / salvar PDF</button></div></body></html>`;
+    const w=window.open('','_blank'); w.document.open(); w.document.write(html); w.document.close();
+  };
 
   // ================= IMPORT CSV =================
   const BANCO_MAP = { SANTANDER: 'SANTANDER', ITAU: 'ITAÚ', ITAÚ: 'ITAÚ', BRADESCO: 'BRADESCO', INTER: 'INTER', CAIXA: 'CAIXA' };
@@ -2827,6 +3344,60 @@
   `;
   document.head.appendChild(style);
 
+
+  // ================= METAS & EXECUÇÃO =================
+  function metaFormatValue(v,tipo){
+    const n=Number(v)||0;
+    if(tipo==='VALOR') return fmtMoney(n);
+    if(tipo==='PERCENTUAL') return n.toLocaleString('pt-BR',{maximumFractionDigits:2})+'%';
+    return n.toLocaleString('pt-BR',{maximumFractionDigits:2});
+  }
+  function metaStep(tipo){ return tipo==='VALOR'?'0.01':tipo==='PERCENTUAL'?'0.01':'1'; }
+
+  function renderMetas(){
+    const periodEl=$('#meta-period-filter'), areaEl=$('#meta-area-filter'); const periodo=periodEl?periodEl.value:'TODOS', area=areaEl?areaEl.value:'TODOS';
+    let rows=metas.filter(m=>(periodo==='TODOS'||m.periodo===periodo)&&(area==='TODOS'||m.area===area));
+    const concl=metas.filter(m=>m.concluida).length, total=metas.length, pct=total?Math.round(concl/total*100):0;
+    const mm=$('#metas-metrics'); if(mm) mm.innerHTML=`<div class="metric"><p class="metric-label">METAS</p><p class="metric-value">${total}</p></div><div class="metric"><p class="metric-label">CONCLUÍDAS</p><p class="metric-value">${concl}</p></div><div class="metric"><p class="metric-label">EXECUÇÃO</p><p class="metric-value">${pct}%</p></div><div class="metric"><p class="metric-label">PENDENTES</p><p class="metric-value">${total-concl}</p></div>`;
+    const t=$('#metas-table'); if(!t)return;
+    t.innerHTML=rows.length?`<thead><tr><th>Check</th><th>Área</th><th>Meta / ação</th><th>Tipo</th><th>Período</th><th>Prazo</th><th>Meta</th><th>Executado</th><th>%</th><th></th></tr></thead><tbody>${rows.map(m=>{const alvo=Number(m.alvo)||1,exec=Number(m.executado)||0,p=Math.min(100,Math.round(exec/alvo*100)),tipo=m.tipo||'QUANTIDADE';return `<tr><td><input type="checkbox" ${m.concluida?'checked':''} onchange="toggleMeta('${m.id}',this.checked)" style="width:auto;height:auto;"></td><td>${escapeHtml(m.area)}</td><td>${escapeHtml(m.titulo)}</td><td>${tipo==='VALOR'?'R$ VALOR':tipo==='PERCENTUAL'?'% PERCENTUAL':'QUANTIDADE'}</td><td>${escapeHtml(m.periodo)}</td><td>${fmtDate(m.prazo)}</td><td><strong>${metaFormatValue(alvo,tipo)}</strong></td><td><input type="number" value="${exec}" min="0" step="${metaStep(tipo)}" style="width:105px;height:30px;" onchange="updateMetaExec('${m.id}',this.value)"><div class="muted" style="font-size:8.5px;margin-top:2px">${metaFormatValue(exec,tipo)}</div></td><td><strong>${p}%</strong></td><td class="row-actions"><button class="icon-btn" onclick="openMetaForm('${m.id}')"><i class="ti ti-edit"></i></button><button class="icon-btn danger" onclick="deleteMeta('${m.id}')"><i class="ti ti-trash"></i></button></td></tr>`}).join('')}</tbody>`:'<tr><td class="empty">NENHUMA META CADASTRADA.</td></tr>';
+  }
+
+  window.openMetaForm=function(id){
+    const m=metas.find(x=>x.id===id)||{id:uid(),area:'COMERCIAL',periodo:'SEMANAL',tipo:'QUANTIDADE',titulo:'',prazo:'',alvo:1,executado:0,concluida:false};
+    m.tipo=m.tipo||'QUANTIDADE';
+    const w=$('#meta-modal-wrap');
+    w.innerHTML=`<div class="modal" style="max-width:620px;"><p class="card-title"><i class="ti ti-target"></i>${id?'Editar':'Nova'} meta</p><div class="form-grid">
+      <div class="field"><label>Área</label><select id="mf-area">${['COMERCIAL','CONTEÚDO','PRODUÇÃO','FINANCEIRO'].map(x=>`<option ${x===m.area?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Período</label><select id="mf-periodo">${['DIÁRIA','SEMANAL','MENSAL','90 DIAS'].map(x=>`<option ${x===m.periodo?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field field-full"><label>Meta / ação</label><input id="mf-titulo" value="${escapeHtml(m.titulo)}" placeholder="EX.: VOLUME EFETIVADO, 30 PROSPECÇÕES, 5 STATUS NO WHATSAPP"></div>
+      <div class="field"><label>Tipo da meta</label><select id="mf-tipo" onchange="updateMetaTypeLabels()"><option value="QUANTIDADE" ${m.tipo==='QUANTIDADE'?'selected':''}>Quantidade</option><option value="VALOR" ${m.tipo==='VALOR'?'selected':''}>Valor (R$)</option><option value="PERCENTUAL" ${m.tipo==='PERCENTUAL'?'selected':''}>Percentual (%)</option></select></div>
+      <div class="field"><label>Prazo</label><input type="date" id="mf-prazo" value="${m.prazo||''}"></div>
+      <div class="field"><label id="mf-alvo-label">Meta</label><input type="number" min="0" id="mf-alvo" value="${m.alvo||1}"></div>
+      <div class="field"><label id="mf-exec-label">Executado</label><input type="number" min="0" id="mf-executado" value="${m.executado||0}"></div>
+    </div><div class="modal-actions"><button onclick="closeModal('meta-modal-wrap')">Cancelar</button><button onclick="saveMeta('${m.id}')">Salvar</button></div></div>`;
+    w.classList.add('open'); updateMetaTypeLabels();
+  };
+  window.updateMetaTypeLabels=function(){
+    const tipo=$('#mf-tipo')?$('#mf-tipo').value:'QUANTIDADE';
+    const suffix=tipo==='VALOR'?' (R$)':tipo==='PERCENTUAL'?' (%)':'';
+    if($('#mf-alvo-label')) $('#mf-alvo-label').textContent='Meta'+suffix;
+    if($('#mf-exec-label')) $('#mf-exec-label').textContent='Executado'+suffix;
+    if($('#mf-alvo')) $('#mf-alvo').step=metaStep(tipo);
+    if($('#mf-executado')) $('#mf-executado').step=metaStep(tipo);
+  };
+  window.saveMeta=async function(id){
+    const titulo=$('#mf-titulo').value.trim();if(!titulo){showToast('INFORME A META / AÇÃO.');return;}
+    const old=metas.find(x=>x.id===id)||{};const alvo=Number($('#mf-alvo').value)||0,executado=Number($('#mf-executado').value)||0;
+    if(alvo<=0){showToast('INFORME UMA META MAIOR QUE ZERO.');return;}
+    const m={...old,id,area:$('#mf-area').value,periodo:$('#mf-periodo').value,tipo:$('#mf-tipo').value,titulo,prazo:$('#mf-prazo').value,alvo,executado,concluida:executado>=alvo};
+    const i=metas.findIndex(x=>x.id===id);if(i>=0)metas[i]=m;else metas.push(m);
+    await saveMetas();closeModal('meta-modal-wrap');renderMetas();
+  };
+  window.toggleMeta=async function(id,v){const m=metas.find(x=>x.id===id);if(m){m.concluida=v;if(v&&Number(m.executado)<Number(m.alvo))m.executado=m.alvo;await saveMetas();renderMetas();}};
+  window.updateMetaExec=async function(id,v){const m=metas.find(x=>x.id===id);if(m){m.executado=Number(v)||0;m.concluida=m.executado>=Number(m.alvo||1);await saveMetas();renderMetas();}};
+  window.deleteMeta=async function(id){if(!confirm('EXCLUIR ESTA META?'))return;metas=metas.filter(x=>x.id!==id);await saveMetas();renderMetas();};
+
   function renderAll() {
     renderDashboard();
     renderPropostas();
@@ -2834,6 +3405,9 @@
     renderSolicitacoes();
     renderClientes();
     renderParceiros();
+    renderComercial();
+    renderMetas();
+    renderMarketInfo();
     renderBancos();
     renderFinanceiro();
   }
@@ -2863,6 +3437,7 @@
         }));
         solicitacoes = list;
         renderSolicitacoes();
+        updateSolicitacaoBell();
         renderDashboard();
       } else if (list.length !== solicitacoes.length) {
         solicitacoes = list;

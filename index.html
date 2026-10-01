@@ -1579,7 +1579,7 @@
               <td>${badgeStatus(s.status || 'ATIVO')}</td>
               <td>${badgeFunil(s.funil)}</td>
               <td style="text-align:center;"><input type="checkbox" ${s.contarNoVolume !== false ? 'checked' : ''} onchange="toggleContarNoVolume('${s.id}', this.checked)" /></td>
-              <td>${s.id !== currentId ? `<button type="button" class="icon-btn" onclick="openProposalForm('${s.id}')" style="height:24px; font-size:10px;">Abrir</button>` : ''}</td>
+              <td>${s.id !== currentId ? `<button type="button" class="icon-btn" onclick="saveAndOpenProposal('${currentId}','${s.id}')" style="height:24px; font-size:10px;">Abrir</button>` : ''}</td>
             </tr>`).join('')}</tbody>
           </table>
         </div>
@@ -1768,7 +1768,8 @@
         <p id="f-error" style="font-size:12px; color:var(--ac-red); display:none;"></p>
         <div class="modal-actions">
           <button onclick="closeModal('proposal-modal-wrap')">Cancelar</button>
-          <button onclick="saveProposalForm('${p.id}')"><i class="ti ti-check" style="font-size:12px; vertical-align:-2px; margin-right:4px;"></i>Salvar</button>
+          <button onclick="saveProposalForm('${p.id}', true)"><i class="ti ti-device-floppy" style="font-size:12px; vertical-align:-2px; margin-right:4px;"></i>Salvar e continuar</button>
+          <button onclick="saveProposalForm('${p.id}', false)"><i class="ti ti-check" style="font-size:12px; vertical-align:-2px; margin-right:4px;"></i>Salvar e sair</button>
         </div>
       </div>`;
     wrap.classList.add('open');
@@ -1818,11 +1819,11 @@
     });
   };
 
-  window.saveProposalForm = function (id) {
+  window.saveProposalForm = async function (id, keepOpen) {
     const dataCriacao = $('#f-dataCriacao').value;
     const errEl = $('#f-error');
-    if (!dataCriacao) { errEl.textContent = 'INFORME A DATA DA PROPOSTA.'; errEl.style.display = 'block'; return; }
-    if (!$('#f-clienteId').value) { errEl.textContent = 'SELECIONE UM CLIENTE DA LISTA DE SUGESTÕES.'; errEl.style.display = 'block'; return; }
+    if (!dataCriacao) { errEl.textContent = 'INFORME A DATA DA PROPOSTA.'; errEl.style.display = 'block'; return false; }
+    if (!$('#f-clienteId').value) { errEl.textContent = 'SELECIONE UM CLIENTE DA LISTA DE SUGESTÕES.'; errEl.style.display = 'block'; return false; }
     errEl.style.display = 'none';
     const existing = propostas.find(p => p.id === id) || {};
     const data = Object.assign({}, existing, {
@@ -1839,9 +1840,22 @@
     const idx = propostas.findIndex(p => p.id === id);
     if (idx >= 0) propostas[idx] = data; else propostas.push(data);
     if (data.grupoId) autoPrincipalGrupo(data.grupoId);
-    savePropostas();
-    closeModal('proposal-modal-wrap');
+    await savePropostas();
     renderAll();
+    if (keepOpen) {
+      openProposalForm(id);
+      showToast('PROPOSTA SALVA. VOCÊ PODE CONTINUAR EDITANDO.');
+    } else {
+      closeModal('proposal-modal-wrap');
+      showToast('PROPOSTA SALVA.');
+    }
+    return true;
+  };
+
+  window.saveAndOpenProposal = async function (currentId, nextId) {
+    const ok = await saveProposalForm(currentId, false);
+    if (!ok) return;
+    openProposalForm(nextId);
   };
 
   // ================= CRM KANBAN =================

@@ -2312,7 +2312,11 @@
   function renderParceiros() {
     const q = ($('#par-search').value || '').toLowerCase();
     const statusFiltro = $('#par-filtro-status').value;
-    let rows = parceiros.filter(p => (p.nome.toLowerCase().includes(q) || (p.tipo || '').toLowerCase().includes(q) || (p.contato || '').toLowerCase().includes(q)) && (!statusFiltro || (p.status || 'ATIVO') === statusFiltro));
+    let rows = parceiros.filter(p => {
+      const imob = parceiros.find(x => x.id === p.imobiliariaId);
+      return (p.nome.toLowerCase().includes(q) || (p.tipo || '').toLowerCase().includes(q) || (p.contato || '').toLowerCase().includes(q) || (imob?.nome || '').toLowerCase().includes(q))
+        && (!statusFiltro || (p.status || 'ATIVO') === statusFiltro);
+    });
     const PAR_GETTERS = {
       nome: p => p.nome.toLowerCase(), tipo: p => (p.tipo || '').toLowerCase(), contato: p => (p.contato || '').toLowerCase(),
       percentualPadrao: p => Number(p.percentualPadrao) || 0, propostas: p => propostas.filter(x => x.parceiroId === p.id).length,
@@ -2324,6 +2328,7 @@
       ? `<thead><tr>
           <th class="sortable" onclick="setParSort('nome')">Nome${sortArrow(parSort, 'nome')}</th>
           <th class="sortable" onclick="setParSort('tipo')">Tipo${sortArrow(parSort, 'tipo')}</th>
+          <th>Imobiliária</th>
           <th class="sortable" onclick="setParSort('contato')">Contato${sortArrow(parSort, 'contato')}</th>
           <th class="sortable" onclick="setParSort('percentualPadrao')">% padrão repasse${sortArrow(parSort, 'percentualPadrao')}</th>
           <th>Potencial</th>
@@ -2333,7 +2338,7 @@
           <th class="sortable" onclick="setParSort('propostas')">Propostas${sortArrow(parSort, 'propostas')}</th>
           <th></th></tr></thead>
         <tbody>${rows.map(p => `<tr>
-          <td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.tipo || '—')}</td><td>${escapeHtml(p.contato || '—')}</td><td>${p.percentualPadrao ? p.percentualPadrao + '%' : '—'}</td>
+          <td>${escapeHtml(p.nome)}</td><td>${escapeHtml(p.tipo || '—')}</td><td>${escapeHtml((parceiros.find(x=>x.id===p.imobiliariaId)||{}).nome || '—')}</td><td>${escapeHtml(p.contato || '—')}</td><td>${p.percentualPadrao ? p.percentualPadrao + '%' : '—'}</td>
           <td>${commercialPotBadge(p.potencial || 'B')}</td>
           <td>${commercialStageBadge(p.etapaComercial || (p.status === 'INATIVO' ? 'INATIVO' : 'A PROSPECTAR'))}</td>
           <td>${fmtDate(p.proximoFollowUp)}</td>
@@ -2361,7 +2366,7 @@
   window.openPartnerForm = function (id) {
     const editing = id ? parceiros.find(p => p.id === id) : null;
     const p = editing || {
-      id: uid(), nome: '', tipo: 'Imobiliária', contato: '', percentualPadrao: '', status: 'ATIVO', email: '',
+      id: uid(), nome: '', tipo: 'Imobiliária', imobiliariaId: '', contato: '', percentualPadrao: '', status: 'ATIVO', email: '',
       cnpj: '', bancoDeposito: '', agencia: '', conta: '', chavePix: '',
       origemComercial: 'BASE ANTIGA', perfilComercial: 'FINANCIAMENTO', cidade: '', regiao: '',
       potencial: 'B', etapaComercial: 'A PROSPECTAR', ultimoContato: '', proximoFollowUp: '',
@@ -2372,12 +2377,14 @@
     const origens = ['BASE ANTIGA','INDICAÇÃO','PROSPECÇÃO','INSTAGRAM','EVENTO','GEOLOCALIZAÇÃO','OUTRO'];
     const perfis = ['FINANCIAMENTO','ALTO PADRÃO','HOME EQUITY','FINANCIAMENTO + HOME EQUITY','OUTRO'];
     const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
+    const imobiliarias = parceiros.filter(x => x.tipo === 'Imobiliária' && x.id !== p.id);
     wrap.innerHTML = `
       <div class="modal" style="max-width:900px;">
         <p class="card-title">${editing ? 'Editar parceiro' : 'Novo parceiro'}</p>
         <div class="form-grid">
           <div class="field field-full"><label>Nome</label><input id="p-nome" value="${escapeHtml(p.nome)}" /></div>
-          <div class="field"><label>Tipo</label><select id="p-tipo">${tipos.map(x=>`<option value="${x}" ${p.tipo===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="field"><label>Tipo</label><select id="p-tipo" onchange="togglePartnerImobiliariaField()">${tipos.map(x=>`<option value="${x}" ${p.tipo===x?'selected':''}>${x}</option>`).join('')}</select></div>
+          <div class="field" id="p-imobiliaria-wrap" style="${p.tipo==='Corretor autônomo'?'':'display:none;'}"><label>Imobiliária vinculada</label><select id="p-imobiliariaId"><option value="">Sem imobiliária / independente</option>${imobiliarias.map(i=>`<option value="${i.id}" ${p.imobiliariaId===i.id?'selected':''}>${escapeHtml(i.nome)}</option>`).join('')}</select></div>
           <div class="field"><label>Contato / WhatsApp</label><input id="p-contato" value="${escapeHtml(p.contato || '')}" /></div>
           <div class="field"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
           <div class="field"><label>Status cadastro</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
@@ -2414,6 +2421,14 @@
     wrap.classList.add('open');
   };
 
+  window.togglePartnerImobiliariaField = function () {
+    const tipo = $('#p-tipo')?.value;
+    const wrap = $('#p-imobiliaria-wrap');
+    if (!wrap) return;
+    wrap.style.display = tipo === 'Corretor autônomo' ? '' : 'none';
+    if (tipo !== 'Corretor autônomo' && $('#p-imobiliariaId')) $('#p-imobiliariaId').value = '';
+  };
+
   window.savePartnerForm = function (id) {
     const nome = $('#p-nome').value.trim();
     if (!nome) { $('#p-error').textContent = 'INFORME O NOME DO PARCEIRO.'; $('#p-error').style.display = 'block'; return; }
@@ -2421,7 +2436,7 @@
     const etapaComercial = $('#p-etapaComercial').value;
     const statusNormalizado = etapaComercial === 'INATIVO' ? 'INATIVO' : (etapaComercial === 'PRODUTOR' ? 'ATIVO' : $('#p-status').value);
     const data = Object.assign({}, existing, {
-      id, nome, tipo: $('#p-tipo').value, contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: statusNormalizado,
+      id, nome, tipo: $('#p-tipo').value, imobiliariaId: $('#p-tipo').value === 'Corretor autônomo' ? ($('#p-imobiliariaId')?.value || '') : '', contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: statusNormalizado,
       email: $('#p-email').value.trim(), cnpj: $('#p-cnpj').value.trim(), bancoDeposito: $('#p-bancoDeposito').value.trim(), agencia: $('#p-agencia').value.trim(), conta: $('#p-conta').value.trim(), chavePix: $('#p-chavePix').value.trim(),
       origemComercial: $('#p-origemComercial').value, perfilComercial: $('#p-perfilComercial').value, cidade: $('#p-cidade').value.trim(), regiao: $('#p-regiao').value.trim(),
       potencial: $('#p-potencial').value, etapaComercial: etapaComercial, ultimoContato: $('#p-ultimoContato').value,
@@ -2521,7 +2536,7 @@
           const st=partnerCommercialStats(p);
           return `<div class="commercial-kanban-card ${cls}" draggable="true" data-partner-id="${p.id}">
             <div class="ck-title"><span>${escapeHtml(p.nome)}</span>${commercialPotBadge(p.potencial||'B')}</div>
-            <div class="ck-meta">${escapeHtml(p.tipo||'PARCEIRO')}${p.regiao?' · '+escapeHtml(p.regiao):''}</div>
+            <div class="ck-meta">${escapeHtml(p.tipo||'PARCEIRO')}${p.imobiliariaId?' · '+escapeHtml((parceiros.find(x=>x.id===p.imobiliariaId)||{}).nome||''):''}${p.regiao?' · '+escapeHtml(p.regiao):''}</div>
             <div class="ck-action"><strong>Próxima ação:</strong> ${escapeHtml(p.proximaAcao||'DEFINIR PRÓXIMA AÇÃO')}</div>
             <div class="ck-meta"><strong>Follow-up:</strong> ${p.proximoFollowUp?fmtDate(p.proximoFollowUp):'SEM DATA'} · Leads: ${st.leads} · Efet.: ${st.efetivadas}</div>
             <div class="ck-actions"><button onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus"></i> Contato</button><button onclick="openCommercialHistory('${p.id}')"><i class="ti ti-history"></i></button></div>

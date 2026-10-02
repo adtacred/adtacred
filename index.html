@@ -2384,7 +2384,7 @@
         <div class="form-grid">
           <div class="field field-full"><label>Nome</label><input id="p-nome" value="${escapeHtml(p.nome)}" /></div>
           <div class="field"><label>Tipo</label><select id="p-tipo" onchange="togglePartnerImobiliariaField()">${tipos.map(x=>`<option value="${x}" ${p.tipo===x?'selected':''}>${x}</option>`).join('')}</select></div>
-          <div class="field" id="p-imobiliaria-wrap" style="${p.tipo==='Corretor autônomo'?'':'display:none;'}"><label>Imobiliária vinculada</label><select id="p-imobiliariaId"><option value="">Sem imobiliária / independente</option>${imobiliarias.map(i=>`<option value="${i.id}" ${p.imobiliariaId===i.id?'selected':''}>${escapeHtml(i.nome)}</option>`).join('')}</select></div>
+          <div class="field" id="p-imobiliaria-wrap" style="${String(p.tipo||'').toUpperCase().includes('CORRETOR')?'':'display:none;'}"><label>Imobiliária vinculada</label><select id="p-imobiliariaId"><option value="">Sem imobiliária / independente</option>${imobiliarias.map(i=>`<option value="${i.id}" ${p.imobiliariaId===i.id?'selected':''}>${escapeHtml(i.nome)}</option>`).join('')}</select><div class="muted" style="font-size:8.5px;margin-top:3px;">VINCULE ESTE CORRETOR A UMA IMOBILIÁRIA JÁ CADASTRADA.</div></div>
           <div class="field"><label>Contato / WhatsApp</label><input id="p-contato" value="${escapeHtml(p.contato || '')}" /></div>
           <div class="field"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
           <div class="field"><label>Status cadastro</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
@@ -2425,8 +2425,9 @@
     const tipo = $('#p-tipo')?.value;
     const wrap = $('#p-imobiliaria-wrap');
     if (!wrap) return;
-    wrap.style.display = tipo === 'Corretor autônomo' ? '' : 'none';
-    if (tipo !== 'Corretor autônomo' && $('#p-imobiliariaId')) $('#p-imobiliariaId').value = '';
+    const ehCorretor = String(tipo||'').toUpperCase().includes('CORRETOR');
+    wrap.style.display = ehCorretor ? '' : 'none';
+    if (!ehCorretor && $('#p-imobiliariaId')) $('#p-imobiliariaId').value = '';
   };
 
   window.savePartnerForm = function (id) {
@@ -2436,7 +2437,7 @@
     const etapaComercial = $('#p-etapaComercial').value;
     const statusNormalizado = etapaComercial === 'INATIVO' ? 'INATIVO' : (etapaComercial === 'PRODUTOR' ? 'ATIVO' : $('#p-status').value);
     const data = Object.assign({}, existing, {
-      id, nome, tipo: $('#p-tipo').value, imobiliariaId: $('#p-tipo').value === 'Corretor autônomo' ? ($('#p-imobiliariaId')?.value || '') : '', contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: statusNormalizado,
+      id, nome, tipo: $('#p-tipo').value, imobiliariaId: String($('#p-tipo').value||'').toUpperCase().includes('CORRETOR') ? ($('#p-imobiliariaId')?.value || '') : '', contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: statusNormalizado,
       email: $('#p-email').value.trim(), cnpj: $('#p-cnpj').value.trim(), bancoDeposito: $('#p-bancoDeposito').value.trim(), agencia: $('#p-agencia').value.trim(), conta: $('#p-conta').value.trim(), chavePix: $('#p-chavePix').value.trim(),
       origemComercial: $('#p-origemComercial').value, perfilComercial: $('#p-perfilComercial').value, cidade: $('#p-cidade').value.trim(), regiao: $('#p-regiao').value.trim(),
       potencial: $('#p-potencial').value, etapaComercial: etapaComercial, ultimoContato: $('#p-ultimoContato').value,

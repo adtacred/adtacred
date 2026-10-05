@@ -449,10 +449,6 @@
       </div>
     </div>
     <div class="grid-metrics grid-metrics-compact" id="parceiros-metrics"></div>
-    <div class="card" style="margin-bottom:12px;">
-      <p class="card-title"><i class="ti ti-chart-bar"></i>Etapa comercial</p>
-      <div id="parceiros-stage-bars"></div>
-    </div>
     <div class="modal-bg" id="partner-modal-wrap"></div>
     <div class="table-wrap"><table id="parceiros-table"></table></div>
   </div>
@@ -2339,7 +2335,7 @@
 
     const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
     const base = Math.max(1,total);
-    $('#parceiros-stage-bars').innerHTML = etapas.map(et => {
+    $('#parceiros-stage-bars') && ($('#parceiros-stage-bars').innerHTML = etapas.map(et => {
       const qtd = parceiros.filter(p => (p.etapaComercial || (p.status === 'INATIVO' ? 'INATIVO' : 'A PROSPECTAR')).toUpperCase() === et).length;
       const pct = Math.round(qtd/base*100);
       return `<div style="display:grid;grid-template-columns:160px 1fr 36px 40px;gap:8px;align-items:center;margin:8px 0;">
@@ -2347,7 +2343,7 @@
         <div style="height:10px;background:var(--ac-bg);border:1px solid var(--ac-border);border-radius:999px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--ac-green);border-radius:999px;"></div></div>
         <strong style="font-size:10px;text-align:right;">${qtd}</strong><span class="muted" style="font-size:9px;text-align:right;">${pct}%</span>
       </div>`;
-    }).join('');
+    }).join(''));
 
     let rows = parceiros.filter(p => {
       const imob = parceiros.find(x => x.id === p.imobiliariaId);
@@ -2436,7 +2432,7 @@
           </div>
           <div class="field"><label>Contato / WhatsApp</label><input id="p-contato" value="${escapeHtml(p.contato || '')}" /></div>
           <div class="field"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
-          <div class="field"><label>Status cadastro</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
+          <div class="field"><label>Status cadastro</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option><option value="BANIDO" ${p.status === 'BANIDO' ? 'selected' : ''}>BANIDO</option></select></div>
         </div>
 
         <hr style="border:none;border-top:1px solid var(--ac-border);margin:14px 0;">
@@ -2446,7 +2442,7 @@
           <div class="field"><label>Perfil / foco</label><select id="p-perfilComercial">${perfis.map(x=>`<option value="${x}" ${(p.perfilComercial||'FINANCIAMENTO')===x?'selected':''}>${x}</option>`).join('')}</select></div>
           <div class="field"><label>Cidade</label><input id="p-cidade" value="${escapeHtml(p.cidade || '')}" /></div>
           <div class="field"><label>Região / bairro</label><input id="p-regiao" value="${escapeHtml(p.regiao || '')}" /></div>
-          <div class="field"><label>Potencial</label><select id="p-potencial"><option value="A" ${p.potencial==='A'?'selected':''}>A · ALTO</option><option value="B" ${(p.potencial||'B')==='B'?'selected':''}>B · MÉDIO</option><option value="C" ${p.potencial==='C'?'selected':''}>C · BAIXO</option></select></div>
+          <div class="field"><label>Potencial</label><select id="p-potencial"><option value="A" ${p.potencial==='A'?'selected':''}>A · ALTO</option><option value="B" ${(p.potencial||'B')==='B'?'selected':''}>B · MÉDIO</option><option value="C" ${p.potencial==='C'?'selected':''}>C · BAIXO</option><option value="D" ${p.potencial==='D'?'selected':''}>D · BAIXÍSSO</option><option value="E" ${p.potencial==='E'?'selected':''}>E · SEM PRIORIDADE</option></select></div>
           <div class="field"><label>Etapa comercial</label><select id="p-etapaComercial">${etapas.map(x=>`<option value="${x}" ${(p.etapaComercial||'A PROSPECTAR')===x?'selected':''}>${x}</option>`).join('')}</select></div>
           <div class="field"><label>Último contato</label><input type="date" id="p-ultimoContato" value="${p.ultimoContato || ''}" /></div>
           <div class="field"><label>Próximo follow-up</label><input type="date" id="p-proximoFollowUp" value="${p.proximoFollowUp || ''}" /></div>
@@ -2485,7 +2481,8 @@
     if (!nome) { $('#p-error').textContent = 'INFORME O NOME DO PARCEIRO.'; $('#p-error').style.display = 'block'; return; }
     const existing = parceiros.find(p => p.id === id) || {};
     const etapaComercial = $('#p-etapaComercial').value;
-    const statusNormalizado = etapaComercial === 'INATIVO' ? 'INATIVO' : (etapaComercial === 'PRODUTOR' ? 'ATIVO' : $('#p-status').value);
+    const statusEscolhido = $('#p-status').value;
+    const statusNormalizado = statusEscolhido === 'BANIDO' ? 'BANIDO' : (etapaComercial === 'INATIVO' ? 'INATIVO' : (etapaComercial === 'PRODUTOR' ? 'ATIVO' : statusEscolhido));
     const data = Object.assign({}, existing, {
       id, nome, tipo: $('#p-tipo').value, imobiliariaId: String($('#p-tipo').value||'').toUpperCase().includes('CORRETOR') ? ($('#p-imobiliariaId')?.value || '') : '', contato: $('#p-contato').value.trim(), percentualPadrao: $('#p-percentualPadrao').value, status: statusNormalizado,
       email: $('#p-email').value.trim(), cnpj: $('#p-cnpj').value.trim(), bancoDeposito: $('#p-bancoDeposito').value.trim(), agencia: $('#p-agencia').value.trim(), conta: $('#p-conta').value.trim(), chavePix: $('#p-chavePix').value.trim(),

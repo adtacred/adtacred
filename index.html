@@ -413,7 +413,7 @@
         <p class="card-title" style="margin:0;"><i class="ti ti-layout-kanban"></i>Kanban de relacionamento</p>
         <span class="muted" style="font-size:9.5px;">ARRASTE O PARCEIRO ENTRE AS ETAPAS</span>
       </div>
-      <select id="crm-status-filter" style="display:none;"><option value="ATIVO" selected>ATIVO</option><option value="INATIVO">INATIVO</option><option value="TODOS">TODOS</option></select>
+      <select id="crm-status-filter" style="display:none;"><option value="ATIVO" selected>ATIVO</option><option value="INATIVO">INATIVO</option><option value="BANIDO">BANIDO</option><option value="TODOS">TODOS</option></select>
       <div class="commercial-kanban" id="commercial-kanban"></div>
     </div>
 
@@ -2529,7 +2529,7 @@
     const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
     const tipos = [...new Set(parceiros.map(p=>p.tipo).filter(Boolean))].sort();
     el.innerHTML = `
-      <div class="field"><label>Status</label><select id="cf-status"><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option><option value="TODOS">Ativos + Inativos</option></select></div>
+      <div class="field"><label>Status</label><select id="cf-status"><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option><option value="BANIDO">Banidos</option><option value="TODOS">Todos</option></select></div>
       <div class="field"><label>Etapa</label><select id="cf-etapa"><option value="">Todas</option>${etapas.map(x=>`<option value="${x}" ${comercialFilters.etapa===x?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Potencial</label><select id="cf-potencial"><option value="">Todos</option>${['A','B','C','D','E'].map(x=>`<option value="${x}" ${comercialFilters.potencial===x?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Tipo</label><select id="cf-tipo"><option value="">Todos</option>${tipos.map(x=>`<option value="${escapeHtml(x)}" ${comercialFilters.tipo===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
@@ -2546,9 +2546,10 @@
     return parceiros.filter(p=>{
       const st=(p.status||'ATIVO').toUpperCase();
       const crmSt=$('#crm-status-filter')?.value||'ATIVO';
-      if(st==='BANIDO') return false;
       if(crmSt==='ATIVO' && st!=='ATIVO') return false;
       if(crmSt==='INATIVO' && st!=='INATIVO') return false;
+      if(crmSt==='BANIDO' && st!=='BANIDO') return false;
+      if(crmSt==='TODOS' && !['ATIVO','INATIVO','BANIDO'].includes(st)) return false;
       const stage=p.etapaComercial || (p.status==='INATIVO'?'INATIVO':'A PROSPECTAR');
       if(comercialFilters.etapa && stage!==comercialFilters.etapa) return false;
       if(comercialFilters.potencial && (p.potencial||'B')!==comercialFilters.potencial) return false;
@@ -2579,8 +2580,10 @@
       {key:'EM RELACIONAMENTO',label:'Em relacionamento',save:'EM RELACIONAMENTO'},
       {key:'PRODUTOR',label:'Produtor',save:'PRODUTOR'}
     ];
-    const crmStatus=$('#crm-status-filter')?.value||'ATIVO';
-    const ativos=parceiros.filter(p=>{const st=(p.status||'ATIVO').toUpperCase();if(st==='BANIDO')return false;const emCRM=p.crmIncluido===true || !!p.etapaComercial || (p.historicoComercial&&p.historicoComercial.length);if(!emCRM)return false;if(crmStatus==='ATIVO')return st==='ATIVO';if(crmStatus==='INATIVO')return st==='INATIVO';return st==='ATIVO'||st==='INATIVO';});
+    const ativos=commercialFilteredPartners().filter(p=>{
+      const emCRM=p.crmIncluido===true || !!p.etapaComercial || (p.historicoComercial&&p.historicoComercial.length);
+      return !!emCRM;
+    });
     el.innerHTML=defs.map(d=>{
       const items=ativos.filter(p=>commercialKanbanGroup(p)===d.key)
         .sort((a,b)=>(a.proximoFollowUp||'9999').localeCompare(b.proximoFollowUp||'9999'));
@@ -2624,10 +2627,10 @@
     const crmStatus=$('#crm-status-filter')?.value||'ATIVO';
     const base=parceiros.filter(p=>{
       const st=(p.status||'ATIVO').toUpperCase();
-      if(st==='BANIDO') return false;
       if(crmStatus==='ATIVO') return st==='ATIVO';
       if(crmStatus==='INATIVO') return st==='INATIVO';
-      return st==='ATIVO'||st==='INATIVO';
+      if(crmStatus==='BANIDO') return st==='BANIDO';
+      return ['ATIVO','INATIVO','BANIDO'].includes(st);
     });
     const hoje=new Date().toISOString().slice(0,10);
     const ativos=parceiros.filter(p=>(p.status||'ATIVO')==='ATIVO').length;

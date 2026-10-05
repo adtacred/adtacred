@@ -437,11 +437,18 @@
   <div class="view" id="view-parceiros">
     <div class="section-head">
       <h2>Parceiros</h2>
-      <div style="display:flex; gap:8px;">
-        <input class="search-input" id="par-search" placeholder="Buscar por nome, tipo ou contato" />
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input class="search-input" id="par-search" placeholder="Buscar por nome, tipo, contato ou imobiliária" />
         <select id="par-filtro-status" style="width:auto; max-width:140px;"><option value="">Todos status</option><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select>
+        <select id="par-filtro-potencial" style="width:auto; max-width:150px;"><option value="">Todos potenciais</option><option value="A">A · Alto</option><option value="B">B · Médio</option><option value="C">C · Baixo</option></select>
+        <select id="par-filtro-etapa" style="width:auto; max-width:190px;"><option value="">Todas etapas</option><option>A PROSPECTAR</option><option>PRIMEIRO CONTATO</option><option>CONTATO REALIZADO</option><option>REUNIÃO AGENDADA</option><option>REUNIÃO REALIZADA</option><option>EM RELACIONAMENTO</option><option>PRODUTOR</option><option>INATIVO</option></select>
         <button onclick="openPartnerForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Novo parceiro</button>
       </div>
+    </div>
+    <div class="grid-metrics grid-metrics-compact" id="parceiros-metrics"></div>
+    <div class="card" style="margin-bottom:12px;">
+      <p class="card-title"><i class="ti ti-chart-bar"></i>Etapa comercial</p>
+      <div id="parceiros-stage-bars"></div>
     </div>
     <div class="modal-bg" id="partner-modal-wrap"></div>
     <div class="table-wrap"><table id="parceiros-table"></table></div>
@@ -2312,10 +2319,38 @@
   function renderParceiros() {
     const q = ($('#par-search').value || '').toLowerCase();
     const statusFiltro = $('#par-filtro-status').value;
+    const potencialFiltro = $('#par-filtro-potencial').value;
+    const etapaFiltro = $('#par-filtro-etapa').value;
+
+    const total = parceiros.length;
+    const ativos = parceiros.filter(p => (p.status || 'ATIVO') === 'ATIVO').length;
+    const inativos = parceiros.filter(p => (p.status || 'ATIVO') === 'INATIVO').length;
+    const produtores = parceiros.filter(p => (p.status || 'ATIVO') === 'ATIVO' && (p.etapaComercial || '').toUpperCase() === 'PRODUTOR').length;
+    $('#parceiros-metrics').innerHTML = `
+      <div class="metric"><p class="metric-label">TOTAL DE PARCEIROS</p><p class="metric-value">${total}</p></div>
+      <div class="metric"><p class="metric-label">ATIVOS</p><p class="metric-value">${ativos}</p></div>
+      <div class="metric"><p class="metric-label">INATIVOS</p><p class="metric-value">${inativos}</p></div>
+      <div class="metric"><p class="metric-label">PRODUTORES</p><p class="metric-value">${produtores}</p></div>`;
+
+    const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
+    const base = Math.max(1,total);
+    $('#parceiros-stage-bars').innerHTML = etapas.map(et => {
+      const qtd = parceiros.filter(p => (p.etapaComercial || (p.status === 'INATIVO' ? 'INATIVO' : 'A PROSPECTAR')).toUpperCase() === et).length;
+      const pct = Math.round(qtd/base*100);
+      return `<div style="display:grid;grid-template-columns:160px 1fr 36px 40px;gap:8px;align-items:center;margin:8px 0;">
+        <div style="font-size:9.5px;font-weight:700;">${et}</div>
+        <div style="height:10px;background:var(--ac-bg);border:1px solid var(--ac-border);border-radius:999px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--ac-green);border-radius:999px;"></div></div>
+        <strong style="font-size:10px;text-align:right;">${qtd}</strong><span class="muted" style="font-size:9px;text-align:right;">${pct}%</span>
+      </div>`;
+    }).join('');
+
     let rows = parceiros.filter(p => {
       const imob = parceiros.find(x => x.id === p.imobiliariaId);
+      const etapa = (p.etapaComercial || (p.status === 'INATIVO' ? 'INATIVO' : 'A PROSPECTAR')).toUpperCase();
       return (p.nome.toLowerCase().includes(q) || (p.tipo || '').toLowerCase().includes(q) || (p.contato || '').toLowerCase().includes(q) || (imob?.nome || '').toLowerCase().includes(q))
-        && (!statusFiltro || (p.status || 'ATIVO') === statusFiltro);
+        && (!statusFiltro || (p.status || 'ATIVO') === statusFiltro)
+        && (!potencialFiltro || String(p.potencial || '').toUpperCase() === potencialFiltro)
+        && (!etapaFiltro || etapa === etapaFiltro);
     });
     const PAR_GETTERS = {
       nome: p => p.nome.toLowerCase(), tipo: p => (p.tipo || '').toLowerCase(), contato: p => (p.contato || '').toLowerCase(),
@@ -2357,6 +2392,8 @@
   };
   $('#par-search').addEventListener('input', renderParceiros);
   $('#par-filtro-status').addEventListener('change', renderParceiros);
+  $('#par-filtro-potencial').addEventListener('change', renderParceiros);
+  $('#par-filtro-etapa').addEventListener('change', renderParceiros);
   window.deletePartner = async function (id) {
     const vinculadas = propostas.filter(p => p.parceiroId === id).length;
     if (vinculadas > 0) { alert(`ESTE PARCEIRO POSSUI ${vinculadas} PROPOSTA(S) VINCULADA(S) E NÃO PODE SER EXCLUÍDO. REMOVA O VÍNCULO NAS PROPOSTAS PRIMEIRO.`); return; }

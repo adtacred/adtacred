@@ -403,19 +403,25 @@
         <button onclick="openIncludePartnerCRM()"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i>Incluir Parceiro</button>
       </div>
     </div>
+
     <div class="grid-metrics grid-metrics-compact" id="crm-status-metrics"></div>
+
     <div class="filters-bar" id="comercial-filters"></div>
+
     <div class="card">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;">
         <p class="card-title" style="margin:0;"><i class="ti ti-layout-kanban"></i>Kanban de relacionamento</p>
-        <span class="muted" style="font-size:9.5px;">ARRASTE O PARCEIRO ENTRE AS ETAPAS · INATIVOS NÃO APARECEM</span>
+        <span class="muted" style="font-size:9.5px;">ARRASTE O PARCEIRO ENTRE AS ETAPAS</span>
       </div>
-      <select id="crm-status-filter" style="display:none"><option value="ATIVO" selected>ATIVO</option></select><div class="commercial-kanban" id="commercial-kanban"></div>
+      <select id="crm-status-filter" style="display:none;"><option value="ATIVO" selected>ATIVO</option><option value="INATIVO">INATIVO</option><option value="TODOS">TODOS</option></select>
+      <div class="commercial-kanban" id="commercial-kanban"></div>
     </div>
+
     <div class="card">
       <p class="card-title"><i class="ti ti-calendar-due"></i>Follow-up comercial</p>
       <div class="table-wrap"><table id="comercial-followup-table"></table></div>
     </div>
+
     <div class="modal-bg overlay-modal-bg" id="commercial-include-modal-wrap"></div>
     <div class="modal-bg overlay-modal-bg" id="commercial-contact-modal-wrap"></div>
     <div class="modal-bg overlay-modal-bg" id="commercial-history-modal-wrap"></div>
@@ -2574,7 +2580,7 @@
       {key:'PRODUTOR',label:'Produtor',save:'PRODUTOR'}
     ];
     const crmStatus=$('#crm-status-filter')?.value||'ATIVO';
-    const ativos=parceiros.filter(p=>{const st=(p.status||'ATIVO').toUpperCase();if(st==='BANIDO')return false;if(crmStatus==='ATIVO')return st==='ATIVO';if(crmStatus==='INATIVO')return st==='INATIVO';return st==='ATIVO'||st==='INATIVO';});
+    const ativos=parceiros.filter(p=>{const st=(p.status||'ATIVO').toUpperCase();if(st==='BANIDO')return false;const emCRM=p.crmIncluido===true || !!p.etapaComercial || (p.historicoComercial&&p.historicoComercial.length);if(!emCRM)return false;if(crmStatus==='ATIVO')return st==='ATIVO';if(crmStatus==='INATIVO')return st==='INATIVO';return st==='ATIVO'||st==='INATIVO';});
     el.innerHTML=defs.map(d=>{
       const items=ativos.filter(p=>commercialKanbanGroup(p)===d.key)
         .sort((a,b)=>(a.proximoFollowUp||'9999').localeCompare(b.proximoFollowUp||'9999'));
@@ -2648,24 +2654,54 @@
   }
 
   window.openIncludePartnerCRM = function() {
-    const wrap=$('#commercial-include-modal-wrap'); if(!wrap) return;
-    const disponiveis=parceiros.filter(p=>(p.status||'ATIVO')!=='BANIDO');
+    const wrap=$('#commercial-include-modal-wrap');
+    if(!wrap){ alert('NÃO FOI POSSÍVEL ABRIR A INCLUSÃO DE PARCEIRO.'); return; }
+    const disponiveis=parceiros
+      .filter(p=>(p.status||'ATIVO').toUpperCase()!=='BANIDO')
+      .slice()
+      .sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
     wrap.innerHTML=`<div class="modal modal-compact">
-      <p class="card-title"><i class="ti ti-user-plus"></i>Incluir parceiro no CRM</p>
-      <p class="muted" style="font-size:10px;margin-top:-5px;">SELECIONE UM PARCEIRO JÁ CADASTRADO. ATIVOS E INATIVOS PODEM SER INCLUÍDOS PARA TRATAMENTO COMERCIAL.</p>
-      <div class="field"><label>Parceiro</label><select id="crm-include-partner"><option value="">SELECIONE</option>${disponiveis.map(p=>`<option value="${p.id}">${escapeHtml(p.nome)} · ${(p.status||'ATIVO')}</option>`).join('')}</select></div>
-      <div class="field"><label>Etapa inicial no CRM</label><select id="crm-include-stage"><option>A PROSPECTAR</option><option>PRIMEIRO CONTATO</option><option>CONTATO REALIZADO</option><option>REUNIÃO AGENDADA</option><option>REUNIÃO REALIZADA</option><option>EM RELACIONAMENTO</option><option>PRODUTOR</option></select></div>
-      <div class="modal-actions"><button onclick="closeModal('commercial-include-modal-wrap')">Cancelar</button><button onclick="confirmIncludePartnerCRM()">Incluir</button></div>
+      <p class="card-title"><i class="ti ti-user-plus"></i>Incluir Parceiro no CRM</p>
+      <p class="muted" style="font-size:10px;margin-top:-5px;">ESCOLHA UM PARCEIRO JÁ CADASTRADO. É POSSÍVEL TRABALHAR PARCEIROS ATIVOS OU INATIVOS. BANIDOS NÃO SÃO EXIBIDOS.</p>
+      <div class="form-grid">
+        <div class="field field-full"><label>Parceiro</label>
+          <select id="crm-include-partner">
+            <option value="">SELECIONE O PARCEIRO</option>
+            ${disponiveis.map(p=>`<option value="${p.id}">${escapeHtml(p.nome||'SEM NOME')} · ${(p.status||'ATIVO').toUpperCase()}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field"><label>Etapa inicial</label>
+          <select id="crm-include-stage">
+            <option value="A PROSPECTAR">A PROSPECTAR</option>
+            <option value="PRIMEIRO CONTATO">PRIMEIRO CONTATO</option>
+            <option value="CONTATO REALIZADO">CONTATO REALIZADO</option>
+            <option value="REUNIÃO AGENDADA">REUNIÃO AGENDADA</option>
+            <option value="REUNIÃO REALIZADA">REUNIÃO REALIZADA</option>
+            <option value="EM RELACIONAMENTO">EM RELACIONAMENTO</option>
+            <option value="PRODUTOR">PRODUTOR</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button onclick="closeModal('commercial-include-modal-wrap')">Cancelar</button>
+        <button onclick="confirmIncludePartnerCRM()">Incluir no CRM</button>
+      </div>
     </div>`;
     wrap.classList.add('open');
   };
+
   window.confirmIncludePartnerCRM = async function(){
-    const id=$('#crm-include-partner')?.value; if(!id){alert('SELECIONE UM PARCEIRO.');return;}
-    const p=parceiros.find(x=>x.id===id); if(!p)return;
+    const id=$('#crm-include-partner')?.value;
+    if(!id){ alert('SELECIONE UM PARCEIRO.'); return; }
+    const p=parceiros.find(x=>x.id===id);
+    if(!p){ alert('PARCEIRO NÃO ENCONTRADO.'); return; }
     p.etapaComercial=$('#crm-include-stage')?.value||'A PROSPECTAR';
+    p.crmIncluido=true;
+    p.crmIncluidoEm=p.crmIncluidoEm||new Date().toISOString();
     await saveParceiros();
     closeModal('commercial-include-modal-wrap');
-    if($('#crm-status-filter')) $('#crm-status-filter').value=(p.status||'ATIVO')==='INATIVO'?'INATIVO':'ATIVO';
+    const status=(p.status||'ATIVO').toUpperCase()==='INATIVO'?'INATIVO':'ATIVO';
+    if($('#crm-status-filter')) $('#crm-status-filter').value=status;
     renderComercial();
   };
 

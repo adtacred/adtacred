@@ -2373,7 +2373,7 @@
       proximaAcao: '', motivoInatividade: '', historicoComercial: []
     };
     const wrap = $('#partner-modal-wrap');
-    const tipos = ['Imobiliária','Corretor autônomo','Construtora','Contador','BPO / Consultoria','Outro'];
+    const tipos = ['Imobiliária','CORRETOR AUTÔNOMO','Construtora','Contador','BPO / Consultoria','Outro'];
     const origens = ['BASE ANTIGA','INDICAÇÃO','PROSPECÇÃO','INSTAGRAM','EVENTO','GEOLOCALIZAÇÃO','OUTRO'];
     const perfis = ['FINANCIAMENTO','ALTO PADRÃO','HOME EQUITY','FINANCIAMENTO + HOME EQUITY','OUTRO'];
     const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
@@ -2384,7 +2384,14 @@
         <div class="form-grid">
           <div class="field field-full"><label>Nome</label><input id="p-nome" value="${escapeHtml(p.nome)}" /></div>
           <div class="field"><label>Tipo</label><select id="p-tipo" onchange="togglePartnerImobiliariaField()">${tipos.map(x=>`<option value="${x}" ${p.tipo===x?'selected':''}>${x}</option>`).join('')}</select></div>
-          <div class="field" id="p-imobiliaria-wrap" style="${String(p.tipo||'').toUpperCase().includes('CORRETOR')?'':'display:none;'}"><label>Imobiliária vinculada</label><select id="p-imobiliariaId"><option value="">Sem imobiliária / independente</option>${imobiliarias.map(i=>`<option value="${i.id}" ${p.imobiliariaId===i.id?'selected':''}>${escapeHtml(i.nome)}</option>`).join('')}</select><div class="muted" style="font-size:8.5px;margin-top:3px;">VINCULE ESTE CORRETOR A UMA IMOBILIÁRIA JÁ CADASTRADA.</div></div>
+          <div class="field" id="p-imobiliaria-wrap" style="${String(p.tipo||'').toUpperCase().includes('CORRETOR')?'':'display:none;'}">
+            <label>Imobiliária vinculada</label>
+            <select id="p-imobiliariaId">
+              <option value="">SEM IMOBILIÁRIA / AUTÔNOMO</option>
+              ${imobiliarias.map(i=>`<option value="${i.id}" ${p.imobiliariaId===i.id?'selected':''}>${escapeHtml(i.nome)}</option>`).join('')}
+            </select>
+            <div class="muted" style="font-size:8.5px;margin-top:3px;">SE O CORRETOR ATUAR EM UMA IMOBILIÁRIA, SELECIONE-A. SE FOR INDEPENDENTE, MANTENHA “SEM IMOBILIÁRIA / AUTÔNOMO”.</div>
+          </div>
           <div class="field"><label>Contato / WhatsApp</label><input id="p-contato" value="${escapeHtml(p.contato || '')}" /></div>
           <div class="field"><label>E-mail</label><input id="p-email" value="${escapeHtml(p.email || '')}" /></div>
           <div class="field"><label>Status cadastro</label><select id="p-status"><option value="ATIVO" ${(p.status || 'ATIVO') === 'ATIVO' ? 'selected' : ''}>ATIVO</option><option value="INATIVO" ${p.status === 'INATIVO' ? 'selected' : ''}>INATIVO</option></select></div>
@@ -2419,6 +2426,7 @@
         <div class="modal-actions"><button onclick="closeModal('partner-modal-wrap')">Cancelar</button><button onclick="savePartnerForm('${p.id}')">Salvar</button></div>
       </div>`;
     wrap.classList.add('open');
+    setTimeout(() => { if (window.togglePartnerImobiliariaField) window.togglePartnerImobiliariaField(); }, 0);
   };
 
   window.togglePartnerImobiliariaField = function () {

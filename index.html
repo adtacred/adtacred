@@ -400,29 +400,23 @@
         <p class="muted" style="font-size:10.5px;margin:3px 0 0;">Prospecção e relacionamento com corretores, imobiliárias e parceiros — separado do Kanban operacional.</p>
       </div>
       <div style="display:flex;gap:8px;">
-        <button onclick="openPartnerForm()"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i>Novo parceiro</button>
+        <button onclick="openIncludePartnerCRM()"><i class="ti ti-user-plus" style="font-size:13px;vertical-align:-2px;margin-right:4px;"></i>Incluir Parceiro</button>
       </div>
     </div>
-    <div class="grid-metrics grid-metrics-compact" id="comercial-metrics"></div>
-<div class="grid-metrics grid-metrics-compact" id="crm-status-metrics"></div>
+    <div class="grid-metrics grid-metrics-compact" id="crm-status-metrics"></div>
     <div class="filters-bar" id="comercial-filters"></div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;">
         <p class="card-title" style="margin:0;"><i class="ti ti-layout-kanban"></i>Kanban de relacionamento</p>
         <span class="muted" style="font-size:9.5px;">ARRASTE O PARCEIRO ENTRE AS ETAPAS · INATIVOS NÃO APARECEM</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:end;margin-bottom:10px;">
-<div class="field" style="min-width:180px;margin:0;"><label>Status do parceiro</label>
-<select id="crm-status-filter" onchange="renderCommercialKanban()"><option value="ATIVO" selected>ATIVOS</option><option value="INATIVO">INATIVOS</option><option value="TODOS">ATIVOS + INATIVOS</option></select></div></div><div class="commercial-kanban" id="commercial-kanban"></div>
+      <select id="crm-status-filter" style="display:none"><option value="ATIVO" selected>ATIVO</option></select><div class="commercial-kanban" id="commercial-kanban"></div>
     </div>
     <div class="card">
       <p class="card-title"><i class="ti ti-calendar-due"></i>Follow-up comercial</p>
       <div class="table-wrap"><table id="comercial-followup-table"></table></div>
     </div>
-    <div class="card">
-      <p class="card-title"><i class="ti ti-chart-funnel"></i>Carteira comercial</p>
-      <div class="table-wrap"><table id="comercial-carteira-table"></table></div>
-    </div>
+    <div class="modal-bg overlay-modal-bg" id="commercial-include-modal-wrap"></div>
     <div class="modal-bg overlay-modal-bg" id="commercial-contact-modal-wrap"></div>
     <div class="modal-bg overlay-modal-bg" id="commercial-history-modal-wrap"></div>
   </div>
@@ -2529,11 +2523,13 @@
     const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
     const tipos = [...new Set(parceiros.map(p=>p.tipo).filter(Boolean))].sort();
     el.innerHTML = `
+      <div class="field"><label>Status</label><select id="cf-status"><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option><option value="TODOS">Ativos + Inativos</option></select></div>
       <div class="field"><label>Etapa</label><select id="cf-etapa"><option value="">Todas</option>${etapas.map(x=>`<option value="${x}" ${comercialFilters.etapa===x?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Potencial</label><select id="cf-potencial"><option value="">Todos</option>${['A','B','C','D','E'].map(x=>`<option value="${x}" ${comercialFilters.potencial===x?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Tipo</label><select id="cf-tipo"><option value="">Todos</option>${tipos.map(x=>`<option value="${escapeHtml(x)}" ${comercialFilters.tipo===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
       <div class="field"><label>Follow-up</label><select id="cf-prazo"><option value="TODOS">Todos</option><option value="ATRASADO" ${comercialFilters.prazo==='ATRASADO'?'selected':''}>Atrasados</option><option value="HOJE" ${comercialFilters.prazo==='HOJE'?'selected':''}>Hoje</option><option value="7DIAS" ${comercialFilters.prazo==='7DIAS'?'selected':''}>Próximos 7 dias</option><option value="SEM" ${comercialFilters.prazo==='SEM'?'selected':''}>Sem follow-up</option></select></div>
       <button onclick="clearComercialFilters()"><i class="ti ti-x"></i> Limpar</button>`;
+    const st=$('#cf-status'); if(st){ st.value=$('#crm-status-filter')?.value||'ATIVO'; st.addEventListener('change',e=>{ if($('#crm-status-filter')) $('#crm-status-filter').value=e.target.value; renderComercial(); }); }
     ['etapa','potencial','tipo','prazo'].forEach(k=>{
       const x=$('#cf-'+k); if(x) x.addEventListener('change',e=>{comercialFilters[k]=e.target.value;renderComercial();});
     });
@@ -2542,6 +2538,11 @@
 
   function commercialFilteredPartners() {
     return parceiros.filter(p=>{
+      const st=(p.status||'ATIVO').toUpperCase();
+      const crmSt=$('#crm-status-filter')?.value||'ATIVO';
+      if(st==='BANIDO') return false;
+      if(crmSt==='ATIVO' && st!=='ATIVO') return false;
+      if(crmSt==='INATIVO' && st!=='INATIVO') return false;
       const stage=p.etapaComercial || (p.status==='INATIVO'?'INATIVO':'A PROSPECTAR');
       if(comercialFilters.etapa && stage!==comercialFilters.etapa) return false;
       if(comercialFilters.potencial && (p.potencial||'B')!==comercialFilters.potencial) return false;
@@ -2613,47 +2614,61 @@
   }
 
   function renderComercial() {
-    const ca=parceiros.filter(p=>(p.status||'ATIVO')==='ATIVO').length;
-    const ci=parceiros.filter(p=>(p.status||'ATIVO')==='INATIVO').length;
-    const cb=parceiros.filter(p=>(p.status||'ATIVO')==='BANIDO').length;
-    const cp=parceiros.filter(p=>(p.status||'ATIVO')==='ATIVO'&&(p.etapaComercial||'').toUpperCase()==='PRODUTOR').length;
-    if($('#crm-status-metrics')) $('#crm-status-metrics').innerHTML=`
-      <div class="metric"><p class="metric-label">TOTAL PARCEIROS</p><p class="metric-value">${parceiros.length}</p></div>
-      <div class="metric"><p class="metric-label">ATIVOS</p><p class="metric-value">${ca}</p></div>
-      <div class="metric"><p class="metric-label">INATIVOS</p><p class="metric-value">${ci}</p></div>
-      <div class="metric"><p class="metric-label">BANIDOS</p><p class="metric-value">${cb}</p></div>
-      <div class="metric"><p class="metric-label">PRODUTORES</p><p class="metric-value">${cp}</p></div>`;
-
-    const metrics=$('#comercial-metrics'); if(!metrics) return;
     renderComercialFilters();
-    renderCommercialKanban();
-    const all=parceiros;
+    const crmStatus=$('#crm-status-filter')?.value||'ATIVO';
+    const base=parceiros.filter(p=>{
+      const st=(p.status||'ATIVO').toUpperCase();
+      if(st==='BANIDO') return false;
+      if(crmStatus==='ATIVO') return st==='ATIVO';
+      if(crmStatus==='INATIVO') return st==='INATIVO';
+      return st==='ATIVO'||st==='INATIVO';
+    });
     const hoje=new Date().toISOString().slice(0,10);
-    const atrasados=all.filter(p=>p.proximoFollowUp && p.proximoFollowUp<hoje && (p.etapaComercial||'')!=='INATIVO').length;
-    const hojeN=all.filter(p=>p.proximoFollowUp===hoje).length;
-    const produtores=all.filter(p=>(p.etapaComercial||'')==='PRODUTOR').length;
-    const potencialA=all.filter(p=>(p.potencial||'B')==='A' && (p.etapaComercial||'')!=='INATIVO').length;
-    metrics.innerHTML=`
-      <div class="metric"><p class="metric-label">Parceiros cadastrados</p><p class="metric-value">${all.length}</p></div>
-      <div class="metric"><p class="metric-label">Produtores</p><p class="metric-value">${produtores}</p></div>
-      <div class="metric"><p class="metric-label">Potencial A</p><p class="metric-value">${potencialA}</p></div>
-      <div class="metric"><p class="metric-label">Follow-ups hoje</p><p class="metric-value">${hojeN}</p></div>
-      <div class="metric"><p class="metric-label">Follow-ups atrasados</p><p class="metric-value" style="${atrasados?'color:#A23B32':''}">${atrasados}</p></div>`;
+    const ativos=parceiros.filter(p=>(p.status||'ATIVO')==='ATIVO').length;
+    const inativos=parceiros.filter(p=>(p.status||'ATIVO')==='INATIVO').length;
+    const banidos=parceiros.filter(p=>(p.status||'ATIVO')==='BANIDO').length;
+    const potencialA=base.filter(p=>(p.potencial||'B')==='A').length;
+    const hojeN=base.filter(p=>p.proximoFollowUp===hoje).length;
+    const atrasados=base.filter(p=>p.proximoFollowUp && p.proximoFollowUp<hoje).length;
+    if($('#crm-status-metrics')) $('#crm-status-metrics').innerHTML=`
+      <div class="metric"><p class="metric-label">ATIVOS</p><p class="metric-value">${ativos}</p></div>
+      <div class="metric"><p class="metric-label">INATIVOS</p><p class="metric-value">${inativos}</p></div>
+      <div class="metric"><p class="metric-label">BANIDOS</p><p class="metric-value">${banidos}</p></div>
+      <div class="metric"><p class="metric-label">POTENCIAL A</p><p class="metric-value">${potencialA}</p></div>
+      <div class="metric"><p class="metric-label">FOLLOW-UPS HOJE</p><p class="metric-value">${hojeN}</p></div>
+      <div class="metric"><p class="metric-label">ATRASADOS</p><p class="metric-value" style="${atrasados?'color:#A23B32':''}">${atrasados}</p></div>`;
+    renderCommercialKanban();
 
-    const follow = parceiros.filter(p=>p.proximoFollowUp).slice().sort((a,b)=>a.proximoFollowUp.localeCompare(b.proximoFollowUp));
+    const follow = commercialFilteredPartners().filter(p=>p.proximoFollowUp).slice().sort((a,b)=>a.proximoFollowUp.localeCompare(b.proximoFollowUp));
     const ft=$('#comercial-followup-table');
     ft.innerHTML=follow.length?`<thead><tr><th>Data</th><th>Parceiro</th><th>Pot.</th><th>Etapa</th><th>Próxima ação</th><th></th></tr></thead><tbody>${follow.map(p=>{
       const d=daysFromToday(p.proximoFollowUp); const cor=d<0?'#A23B32':d===0?'#A7752B':'';
       return `<tr><td style="font-weight:700;color:${cor||'inherit'}">${fmtDate(p.proximoFollowUp)}</td><td>${escapeHtml(p.nome)}</td><td>${commercialPotBadge(p.potencial||'B')}</td><td>${commercialStageBadge(p.etapaComercial||'A PROSPECTAR')}</td><td>${escapeHtml(p.proximaAcao||'—')}</td><td class="row-actions"><button class="icon-btn" onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus"></i>Contato</button><button class="icon-btn" onclick="openCommercialHistory('${p.id}')"><i class="ti ti-history"></i></button></td></tr>`;
-    }).join('')}</tbody>`:`<tr><td class="empty">Nenhum follow-up agendado.</td></tr>`;
-
-    const rows=commercialFilteredPartners().slice().sort((a,b)=>(a.proximoFollowUp||'9999').localeCompare(b.proximoFollowUp||'9999'));
-    const ct=$('#comercial-carteira-table');
-    ct.innerHTML=rows.length?`<thead><tr><th>Parceiro</th><th>Tipo</th><th>Região</th><th>Pot.</th><th>Etapa</th><th>Último contato</th><th>Próx. follow-up</th><th>Leads</th><th>Efet.</th><th>Volume</th><th></th></tr></thead><tbody>${rows.map(p=>{
-      const st=partnerCommercialStats(p);
-      return `<tr><td><strong>${escapeHtml(p.nome)}</strong><div class="muted" style="font-size:9.5px">${escapeHtml(p.perfilComercial||'')}</div></td><td>${escapeHtml(p.tipo||'—')}</td><td>${escapeHtml([p.cidade,p.regiao].filter(Boolean).join(' · ')||'—')}</td><td>${commercialPotBadge(p.potencial||'B')}</td><td>${commercialStageBadge(p.etapaComercial||(p.status==='INATIVO'?'INATIVO':'A PROSPECTAR'))}</td><td>${fmtDate(p.ultimoContato)}</td><td>${fmtDate(p.proximoFollowUp)}</td><td>${st.leads}</td><td>${st.efetivadas}</td><td>${fmtMoney(st.volume)}</td><td class="row-actions"><button class="icon-btn" onclick="openCommercialContact('${p.id}')"><i class="ti ti-message-plus"></i>Contato</button><button class="icon-btn" onclick="openCommercialHistory('${p.id}')"><i class="ti ti-history"></i></button><button class="icon-btn" onclick="openPartnerForm('${p.id}')"><i class="ti ti-edit"></i></button></td></tr>`;
-    }).join('')}</tbody>`:`<tr><td class="empty">Nenhum parceiro com estes filtros.</td></tr>`;
+    }).join('')}</tbody>`:`<tr><td class="empty">Nenhum follow-up agendado para estes filtros.</td></tr>`;
   }
+
+  window.openIncludePartnerCRM = function() {
+    const wrap=$('#commercial-include-modal-wrap'); if(!wrap) return;
+    const disponiveis=parceiros.filter(p=>(p.status||'ATIVO')!=='BANIDO');
+    wrap.innerHTML=`<div class="modal modal-compact">
+      <p class="card-title"><i class="ti ti-user-plus"></i>Incluir parceiro no CRM</p>
+      <p class="muted" style="font-size:10px;margin-top:-5px;">SELECIONE UM PARCEIRO JÁ CADASTRADO. ATIVOS E INATIVOS PODEM SER INCLUÍDOS PARA TRATAMENTO COMERCIAL.</p>
+      <div class="field"><label>Parceiro</label><select id="crm-include-partner"><option value="">SELECIONE</option>${disponiveis.map(p=>`<option value="${p.id}">${escapeHtml(p.nome)} · ${(p.status||'ATIVO')}</option>`).join('')}</select></div>
+      <div class="field"><label>Etapa inicial no CRM</label><select id="crm-include-stage"><option>A PROSPECTAR</option><option>PRIMEIRO CONTATO</option><option>CONTATO REALIZADO</option><option>REUNIÃO AGENDADA</option><option>REUNIÃO REALIZADA</option><option>EM RELACIONAMENTO</option><option>PRODUTOR</option></select></div>
+      <div class="modal-actions"><button onclick="closeModal('commercial-include-modal-wrap')">Cancelar</button><button onclick="confirmIncludePartnerCRM()">Incluir</button></div>
+    </div>`;
+    wrap.classList.add('open');
+  };
+  window.confirmIncludePartnerCRM = async function(){
+    const id=$('#crm-include-partner')?.value; if(!id){alert('SELECIONE UM PARCEIRO.');return;}
+    const p=parceiros.find(x=>x.id===id); if(!p)return;
+    p.etapaComercial=$('#crm-include-stage')?.value||'A PROSPECTAR';
+    await saveParceiros();
+    closeModal('commercial-include-modal-wrap');
+    if($('#crm-status-filter')) $('#crm-status-filter').value=(p.status||'ATIVO')==='INATIVO'?'INATIVO':'ATIVO';
+    renderComercial();
+  };
+
 
   window.openCommercialContact = function(id) {
     const p=parceiros.find(x=>x.id===id); if(!p) return;

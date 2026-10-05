@@ -404,13 +404,16 @@
       </div>
     </div>
     <div class="grid-metrics grid-metrics-compact" id="comercial-metrics"></div>
+<div class="grid-metrics grid-metrics-compact" id="crm-status-metrics"></div>
     <div class="filters-bar" id="comercial-filters"></div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;">
         <p class="card-title" style="margin:0;"><i class="ti ti-layout-kanban"></i>Kanban de relacionamento</p>
         <span class="muted" style="font-size:9.5px;">ARRASTE O PARCEIRO ENTRE AS ETAPAS · INATIVOS NÃO APARECEM</span>
       </div>
-      <div class="commercial-kanban" id="commercial-kanban"></div>
+      <div style="display:flex;gap:8px;align-items:end;margin-bottom:10px;">
+<div class="field" style="min-width:180px;margin:0;"><label>Status do parceiro</label>
+<select id="crm-status-filter" onchange="renderCommercialKanban()"><option value="ATIVO" selected>ATIVOS</option><option value="INATIVO">INATIVOS</option><option value="TODOS">ATIVOS + INATIVOS</option></select></div></div><div class="commercial-kanban" id="commercial-kanban"></div>
     </div>
     <div class="card">
       <p class="card-title"><i class="ti ti-calendar-due"></i>Follow-up comercial</p>
@@ -439,8 +442,8 @@
       <h2>Parceiros</h2>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <input class="search-input" id="par-search" placeholder="Buscar por nome, tipo, contato ou imobiliária" />
-        <select id="par-filtro-status" style="width:auto; max-width:140px;"><option value="">Todos status</option><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option></select>
-        <select id="par-filtro-potencial" style="width:auto; max-width:150px;"><option value="">Todos potenciais</option><option value="A">A · Alto</option><option value="B">B · Médio</option><option value="C">C · Baixo</option></select>
+        <select id="par-filtro-status" style="width:auto; max-width:140px;"><option value="">Todos status</option><option value="ATIVO">Ativo</option><option value="INATIVO">Inativo</option><option value="BANIDO">Banido</option></select>
+        <select id="par-filtro-potencial" style="width:auto; max-width:150px;"><option value="">Todos potenciais</option><option value="A">A · Alto</option><option value="B">B · Médio</option><option value="C">C · Baixo</option><option value="D">D</option><option value="E">E</option></select>
         <select id="par-filtro-etapa" style="width:auto; max-width:190px;"><option value="">Todas etapas</option><option>A PROSPECTAR</option><option>PRIMEIRO CONTATO</option><option>CONTATO REALIZADO</option><option>REUNIÃO AGENDADA</option><option>REUNIÃO REALIZADA</option><option>EM RELACIONAMENTO</option><option>PRODUTOR</option><option>INATIVO</option></select>
         <button onclick="openPartnerForm()"><i class="ti ti-plus" style="font-size:13px; vertical-align:-2px; margin-right:4px;"></i>Novo parceiro</button>
       </div>
@@ -1740,7 +1743,7 @@
           <div class="field"><label>Banco</label><select id="f-banco">${bancos.map(b => `<option value="${b.nome}" ${b.nome === p.banco ? 'selected' : ''}>${b.nome}</option>`).join('')}${!bancos.length ? '<option value="">Cadastre um banco na aba Bancos</option>' : ''}</select></div>
           <div class="field"><label>Plataforma</label><select id="f-plataforma">${PLATAFORMAS.map(b => `<option value="${b}" ${b === p.plataforma ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
           <div class="field"><label>Nº proposta</label><input id="f-numeroProposta" value="${escapeHtml(p.numeroProposta)}" /></div>
-          <div class="field"><label>Status</label><select id="f-status">${['ATIVO','INATIVO'].map(s => `<option value="${s}" ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+          <div class="field"><label>Status</label><select id="f-status">${['ATIVO','INATIVO','BANIDO'].map(s => `<option value="${s}" ${s === p.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
           <div class="field"><label>Status funil</label><select id="f-funil">${FUNIL_STAGES.map(s => `<option value="${s}" ${s === p.funil ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
           <div class="field"><label>Data da proposta</label><input type="date" id="f-dataCriacao" value="${p.dataCriacao || ''}" /></div>
           <div class="field"><label>Próximo follow-up</label><input type="date" id="f-dataFollowUp" value="${p.dataFollowUp || ''}" /></div>
@@ -2325,11 +2328,13 @@
     const total = parceiros.length;
     const ativos = parceiros.filter(p => (p.status || 'ATIVO') === 'ATIVO').length;
     const inativos = parceiros.filter(p => (p.status || 'ATIVO') === 'INATIVO').length;
+    const banidos = parceiros.filter(p => (p.status || 'ATIVO') === 'BANIDO').length;
     const produtores = parceiros.filter(p => (p.status || 'ATIVO') === 'ATIVO' && (p.etapaComercial || '').toUpperCase() === 'PRODUTOR').length;
     $('#parceiros-metrics').innerHTML = `
       <div class="metric"><p class="metric-label">TOTAL DE PARCEIROS</p><p class="metric-value">${total}</p></div>
       <div class="metric"><p class="metric-label">ATIVOS</p><p class="metric-value">${ativos}</p></div>
       <div class="metric"><p class="metric-label">INATIVOS</p><p class="metric-value">${inativos}</p></div>
+      <div class="metric"><p class="metric-label">BANIDOS</p><p class="metric-value">${banidos}</p></div>
       <div class="metric"><p class="metric-label">PRODUTORES</p><p class="metric-value">${produtores}</p></div>`;
 
     const etapas = ['A PROSPECTAR','PRIMEIRO CONTATO','CONTATO REALIZADO','REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO','PRODUTOR','INATIVO'];
@@ -2528,7 +2533,7 @@
     const tipos = [...new Set(parceiros.map(p=>p.tipo).filter(Boolean))].sort();
     el.innerHTML = `
       <div class="field"><label>Etapa</label><select id="cf-etapa"><option value="">Todas</option>${etapas.map(x=>`<option value="${x}" ${comercialFilters.etapa===x?'selected':''}>${x}</option>`).join('')}</select></div>
-      <div class="field"><label>Potencial</label><select id="cf-potencial"><option value="">Todos</option>${['A','B','C'].map(x=>`<option value="${x}" ${comercialFilters.potencial===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Potencial</label><select id="cf-potencial"><option value="">Todos</option>${['A','B','C','D','E'].map(x=>`<option value="${x}" ${comercialFilters.potencial===x?'selected':''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label>Tipo</label><select id="cf-tipo"><option value="">Todos</option>${tipos.map(x=>`<option value="${escapeHtml(x)}" ${comercialFilters.tipo===x?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></div>
       <div class="field"><label>Follow-up</label><select id="cf-prazo"><option value="TODOS">Todos</option><option value="ATRASADO" ${comercialFilters.prazo==='ATRASADO'?'selected':''}>Atrasados</option><option value="HOJE" ${comercialFilters.prazo==='HOJE'?'selected':''}>Hoje</option><option value="7DIAS" ${comercialFilters.prazo==='7DIAS'?'selected':''}>Próximos 7 dias</option><option value="SEM" ${comercialFilters.prazo==='SEM'?'selected':''}>Sem follow-up</option></select></div>
       <button onclick="clearComercialFilters()"><i class="ti ti-x"></i> Limpar</button>`;
@@ -2555,7 +2560,7 @@
 
   function commercialKanbanGroup(p){
     const e=(p.etapaComercial||'A PROSPECTAR').toUpperCase();
-    if(e==='INATIVO') return 'INATIVO';
+    if(e==='INATIVO') return 'A PROSPECTAR';
     if(e==='PRODUTOR') return 'PRODUTOR';
     if(['REUNIÃO AGENDADA','REUNIÃO REALIZADA','EM RELACIONAMENTO'].includes(e)) return 'EM RELACIONAMENTO';
     if(['PRIMEIRO CONTATO','CONTATO REALIZADO'].includes(e)) return 'EM CONTATO';
@@ -2570,7 +2575,8 @@
       {key:'EM RELACIONAMENTO',label:'Em relacionamento',save:'EM RELACIONAMENTO'},
       {key:'PRODUTOR',label:'Produtor',save:'PRODUTOR'}
     ];
-    const ativos=parceiros.filter(p=>commercialKanbanGroup(p)!=='INATIVO');
+    const crmStatus=$('#crm-status-filter')?.value||'ATIVO';
+    const ativos=parceiros.filter(p=>{const st=(p.status||'ATIVO').toUpperCase();if(st==='BANIDO')return false;if(crmStatus==='ATIVO')return st==='ATIVO';if(crmStatus==='INATIVO')return st==='INATIVO';return st==='ATIVO'||st==='INATIVO';});
     el.innerHTML=defs.map(d=>{
       const items=ativos.filter(p=>commercialKanbanGroup(p)===d.key)
         .sort((a,b)=>(a.proximoFollowUp||'9999').localeCompare(b.proximoFollowUp||'9999'));
@@ -2610,6 +2616,17 @@
   }
 
   function renderComercial() {
+    const ca=parceiros.filter(p=>(p.status||'ATIVO')==='ATIVO').length;
+    const ci=parceiros.filter(p=>(p.status||'ATIVO')==='INATIVO').length;
+    const cb=parceiros.filter(p=>(p.status||'ATIVO')==='BANIDO').length;
+    const cp=parceiros.filter(p=>(p.status||'ATIVO')==='ATIVO'&&(p.etapaComercial||'').toUpperCase()==='PRODUTOR').length;
+    if($('#crm-status-metrics')) $('#crm-status-metrics').innerHTML=`
+      <div class="metric"><p class="metric-label">TOTAL PARCEIROS</p><p class="metric-value">${parceiros.length}</p></div>
+      <div class="metric"><p class="metric-label">ATIVOS</p><p class="metric-value">${ca}</p></div>
+      <div class="metric"><p class="metric-label">INATIVOS</p><p class="metric-value">${ci}</p></div>
+      <div class="metric"><p class="metric-label">BANIDOS</p><p class="metric-value">${cb}</p></div>
+      <div class="metric"><p class="metric-label">PRODUTORES</p><p class="metric-value">${cp}</p></div>`;
+
     const metrics=$('#comercial-metrics'); if(!metrics) return;
     renderComercialFilters();
     renderCommercialKanban();

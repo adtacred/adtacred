@@ -133,7 +133,9 @@
   .pill-amber-text { color: var(--ac-gold); font-weight: 600; }
   .muted { color: var(--ac-text-muted); }
   .search-input { max-width: 260px; }
-  .funil-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; margin-top: 8px; background: var(--ac-surface-alt); }
+  .funil-bar { display:flex; flex-direction:column; align-items:center; gap:5px; margin-top:12px; padding:4px 0; }
+  .funil-stage { clip-path:polygon(3% 0,97% 0,100% 100%,0 100%); min-height:30px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:6px 12px; color:#fff; border-radius:5px; font-size:10px; font-weight:700; box-sizing:border-box; transition:width .2s ease; }
+  .funil-stage span:last-child { white-space:nowrap; }
   .funil-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; font-size: 11px; color: var(--ac-text-soft); }
   .funil-legend span.dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
 
@@ -723,7 +725,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     </div>
     <div class="charts-grid">
       <div class="card"><p class="card-title"><i class="ti ti-chart-bar"></i>Valor financiado por etapa do funil</p><div class="chart-box" id="chart-cluster"></div></div>
-      <div class="card"><p class="card-title"><i class="ti ti-users"></i>Valor financiado por parceiro</p><div class="chart-box" id="chart-parceiro"></div></div>
+      <div class="card"><p class="card-title"><i class="ti ti-users"></i>Valor de propostas por parceiro</p><div class="chart-box" id="chart-parceiro"></div></div>
     </div>
     <div class="card">
       <p class="card-title"><i class="ti ti-chart-donut"></i>Funil de propostas</p>
@@ -1435,10 +1437,11 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
 
   let propPage = 1;
   let propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' };
+  let propPartnerQuery = '';
   let propSort = { col: 'dataCriacao', dir: -1 };
   let parSort = { col: 'nome', dir: 1 };
   let comercialFilters = { status: 'ATIVO', etapa: '', potencial: '', tipo: '', prazo: 'TODOS' };
-  let dashFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', funilSet: new Set(['APROVADO','PRODUÇÃO','EFETIVADO']), parceiroId: '' };
+  let dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
   let charts = {};
   let marketInfo = {
     atualizadoEm: new Date().toISOString().slice(0,10),
@@ -1928,8 +1931,22 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     const st = STATUS_STYLES[s] || { bg: '#EEE', fg: '#666' };
     return `<span class="badge" style="background:${st.bg}; color:${st.fg};">${escapeHtml(s || '—')}</span>`;
   }
-  function anoOf(p) { return p.dataCriacao ? p.dataCriacao.slice(0, 4) : ''; }
-  function mesOf(p) { return p.dataCriacao ? p.dataCriacao.slice(5, 7) : ''; }
+  // Datas de propostas podem chegar como ISO (AAAA-MM-DD) ou BR (DD/MM/AAAA).
+  // Centraliza a leitura para que os filtros do Dashboard usem sempre o mesmo critério.
+  function dataCriacaoPartes(p) {
+    const raw = String(p?.dataCriacao || p?.createdAt || p?.dataCadastro || '').trim();
+    if (!raw) return { ano: '', mes: '' };
+    let m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return { ano: m[1], mes: String(m[2]).padStart(2, '0') };
+    m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return { ano: m[3], mes: String(m[2]).padStart(2, '0') };
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? { ano: '', mes: '' } : { ano: String(d.getFullYear()), mes: String(d.getMonth()+1).padStart(2,'0') };
+  }
+  function anoOf(p) { return dataCriacaoPartes(p).ano; }
+  function mesOf(p) { return dataCriacaoPartes(p).mes; }
+  function normalizarStatusDash(p) { return String(p?.status || 'ATIVO').trim().toUpperCase(); }
+  function mesmoId(a, b) { return String(a ?? '') === String(b ?? ''); }
   function distinctYears() {
     const ys = new Set(propostas.map(anoOf).filter(Boolean));
     return Array.from(ys).sort().reverse();
@@ -1948,9 +1965,9 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     return propostas.filter(p => {
       if (dashFilters.ano && anoOf(p) !== dashFilters.ano) return false;
       if (dashFilters.mes && mesOf(p) !== dashFilters.mes) return false;
-      if (dashFilters.status && (p.status || '') !== dashFilters.status) return false;
+      if (dashFilters.status && normalizarStatusDash(p) !== dashFilters.status) return false;
       if (dashFilters.funilSet.size && !dashFilters.funilSet.has(p.funil)) return false;
-      if (dashFilters.parceiroId && p.parceiroId !== dashFilters.parceiroId) return false;
+      if (dashFilters.parceiroId && !mesmoId(p.parceiroId, dashFilters.parceiroId)) return false;
       return true;
     });
   }
@@ -1992,7 +2009,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     renderDashboard();
   };
   window.clearDashFilters = function () {
-    dashFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', funilSet: new Set(['APROVADO','PRODUÇÃO','EFETIVADO']), parceiroId: '' };
+    dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
     renderDashboard();
   };
   document.addEventListener('click', (e) => {
@@ -2042,50 +2059,76 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
   function renderDashboard() {
     renderDashFilters();
     const rows = filteredForDash();
-    const volRows = rows.filter(p => p.contarNoVolume !== false); // exclui tentativas paralelas (mesmo cliente, outro banco)
+    // Base dos gráficos: respeita período, status do cadastro e parceiro, mas não
+    // deixa o filtro de etapa esconder propostas reprovadas ou outras etapas.
+    const chartRows = propostas.filter(p => {
+      if (dashFilters.ano && anoOf(p) !== dashFilters.ano) return false;
+      if (dashFilters.mes && mesOf(p) !== dashFilters.mes) return false;
+      if (dashFilters.status && normalizarStatusDash(p) !== dashFilters.status) return false;
+      if (dashFilters.parceiroId && !mesmoId(p.parceiroId, dashFilters.parceiroId)) return false;
+      return true;
+    });
+    const volRows = rows.filter(p => p.contarNoVolume !== false);
     const totalFinanciado = volRows.reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0);
-    const clientesUnicos = new Set(rows.map(p => p.clienteId)).size;
+    const totalImoveis = volRows.reduce((s, p) => s + (Number(p.valorImovel || p.valorCompra) || 0), 0);
+    const clientesUnicos = new Set(rows.map(p => p.clienteId).filter(Boolean)).size;
     const ticketMedio = volRows.length ? totalFinanciado / volRows.length : 0;
     const finalizadas = rows.filter(p => p.funil === 'FINALIZADO').length;
+    // Indicadores de carteira: sempre consideram todo o histórico, sem filtro de data.
+    const ativosAprovados = propostas.filter(p => p.status === 'ATIVO' && p.funil === 'APROVADO');
+    const ativosProducao = propostas.filter(p => p.status === 'ATIVO' && p.funil === 'PRODUÇÃO');
+    const soma = arr => arr.filter(p => p.contarNoVolume !== false).reduce((t,p)=>t+(Number(p.valorFinanciado)||0),0);
 
     $('#dash-metrics').innerHTML = `
-      <div class="metric"><p class="metric-label">Valor financiamento</p><p class="metric-value">${fmtMoney(totalFinanciado)}</p></div>
+      <div class="metric"><p class="metric-label">Valor do imóvel</p><p class="metric-value">${fmtMoney(totalImoveis)}</p><p class="muted" style="font-size:9px;margin:4px 0 0;">Soma das propostas consideradas no volume</p></div>
+      <div class="metric"><p class="metric-label">Valor financiamento</p><p class="metric-value">${fmtMoney(totalFinanciado)}</p><p class="muted" style="font-size:9px;margin:4px 0 0;">Sem duplicar tentativas em outros bancos</p></div>
       <div class="metric"><p class="metric-label">Quantidade de clientes</p><p class="metric-value">${clientesUnicos}</p></div>
       <div class="metric"><p class="metric-label">Ticket médio</p><p class="metric-value">${fmtMoney(ticketMedio)}</p></div>
       <div class="metric"><p class="metric-label">Propostas finalizadas</p><p class="metric-value">${finalizadas}</p></div>
+      <div class="metric"><p class="metric-label">Ativos e aprovados · histórico</p><p class="metric-value">${ativosAprovados.length}</p><p class="muted" style="font-size:9px;margin:4px 0 0;">${fmtMoney(soma(ativosAprovados))} em financiamento</p></div>
+      <div class="metric"><p class="metric-label">Ativos em produção · histórico</p><p class="metric-value">${ativosProducao.length}</p><p class="muted" style="font-size:9px;margin:4px 0 0;">${fmtMoney(soma(ativosProducao))} em financiamento</p></div>
     `;
 
-    // Bar chart: valor by month
+    // Mês: inclui todas as etapas (inclusive reprovadas), mas soma apenas a ficha
+    // principal de cada operação para não multiplicar pelo número de bancos.
+    const monthlyRows = chartRows.filter(p => p.contarNoVolume !== false);
     const byMonth = {};
-    volRows.forEach(p => { const k = p.dataCriacao ? p.dataCriacao.slice(0, 7) : 'S/DATA'; byMonth[k] = (byMonth[k] || 0) + (Number(p.valorFinanciado) || 0); });
+    monthlyRows.forEach(p => { const k = p.dataCriacao ? p.dataCriacao.slice(0, 7) : 'S/DATA'; byMonth[k] = (byMonth[k] || 0) + (Number(p.valorFinanciado) || 0); });
     const monthKeys = Object.keys(byMonth).sort();
     renderBarChart('chart-barra', monthKeys, monthKeys.map(k => byMonth[k]), '#0E4C42');
 
-    // Pie chart: by banco
+    // Banco: considera cada encaminhamento bancário, por isso não aplica a trava
+    // contarNoVolume; este gráfico compara o volume solicitado a cada instituição.
     const byBanco = {};
-    volRows.forEach(p => { const k = p.banco || 'N/D'; byBanco[k] = (byBanco[k] || 0) + (Number(p.valorFinanciado) || 0); });
-    renderPieChart('chart-pizza', Object.keys(byBanco), Object.values(byBanco));
+    chartRows.forEach(p => {
+      const raw = bancoNomeChave(p.banco || 'N/D');
+      const k = raw.includes('SANTANDER') ? 'SANTANDER' : raw.includes('ITAU') ? 'ITAÚ' : raw.includes('BRADESCO') ? 'BRADESCO' : raw.includes('INTER') ? 'INTER' : raw || 'N/D';
+      byBanco[k] = (byBanco[k] || 0) + (Number(p.valorFinanciado) || 0);
+    });
+    // Mantém Santander visível mesmo quando não há operação no recorte atual.
+    if (!Object.prototype.hasOwnProperty.call(byBanco, 'SANTANDER')) byBanco['SANTANDER'] = 0;
+    renderPieChart('chart-pizza', Object.keys(byBanco).filter(k=>byBanco[k]>0), Object.keys(byBanco).filter(k=>byBanco[k]>0).map(k=>byBanco[k]));
 
-    // Clustered bar: funil x valor
-    const clusterValues = FUNIL_STAGES.map(f => volRows.filter(p => p.funil === f).reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0));
+    // Etapas: ignora a seleção de etapas do filtro para sempre mostrar também REPROVADO.
+    const clusterValues = FUNIL_STAGES.map(f => chartRows.filter(p => p.funil === f && p.contarNoVolume !== false).reduce((s, p) => s + (Number(p.valorFinanciado) || 0), 0));
     renderHBarChart('chart-cluster', FUNIL_STAGES, clusterValues, FUNIL_STAGES.map(f => FUNIL_STYLES[f].fg));
 
+    // Parceiro: valor solicitado uma única vez por operação, sem multiplicar pelas fichas bancárias.
     const byParceiro = {};
-    volRows.forEach(p => { const k = parceiroNome(p.parceiroId) || 'SEM PARCEIRO'; byParceiro[k] = (byParceiro[k] || 0) + (Number(p.valorFinanciado) || 0); });
+    chartRows.filter(p => p.contarNoVolume !== false).forEach(p => { const k = parceiroNome(p.parceiroId) || 'SEM PARCEIRO'; byParceiro[k] = (byParceiro[k] || 0) + (Number(p.valorFinanciado) || 0); });
     const parceiroLabels = Object.keys(byParceiro).sort((a,b) => byParceiro[b]-byParceiro[a]);
     renderHBarChart('chart-parceiro', parceiroLabels, parceiroLabels.map(k => byParceiro[k]), parceiroLabels.map((_,i)=>PALETTE[i%PALETTE.length]));
 
-    // funil bar (counts)
-    const total = rows.length || 1;
-    const counts = {};
-    FUNIL_STAGES.forEach(s => counts[s] = rows.filter(p => p.funil === s).length);
-    $('#funil-bar').innerHTML = FUNIL_STAGES.map(s => {
-      const pct = (counts[s] / total * 100).toFixed(1);
-      return `<div style="width:${pct}%; background:${FUNIL_STYLES[s].fg};" title="${s}: ${counts[s]}"></div>`;
+    // Funil gráfico: larguras proporcionais ao volume de cada etapa, em formato de funil.
+    const funnelCounts = FUNIL_STAGES.map(stage => chartRows.filter(p => p.funil === stage).length);
+    const maxCount = Math.max(1, ...funnelCounts);
+    $('#funil-bar').innerHTML = FUNIL_STAGES.map((stage, i) => {
+      const width = Math.max(24, (funnelCounts[i] / maxCount) * 100);
+      return `<div class="funil-stage" style="width:${width}%;max-width:100%;background:${FUNIL_STYLES[stage].fg};"><span>${stage}</span><span>${funnelCounts[i]}</span></div>`;
     }).join('');
-    $('#funil-legend').innerHTML = FUNIL_STAGES.map(s => `<span><span class="dot" style="background:${FUNIL_STYLES[s].fg}"></span>${s}: ${counts[s]}</span>`).join('');
+    $('#funil-legend').innerHTML = FUNIL_STAGES.map((stage,i) => `<span><span class="dot" style="background:${FUNIL_STYLES[stage].fg}"></span>${stage}: ${funnelCounts[i]}</span>`).join('');
 
-    // follow-up — semáforo por proximidade do vencimento
+    // Follow-up — preservado exatamente com os mesmos critérios e apresentação.
     function diasAteVencer(dataFollowUp) { const d = daysSince(dataFollowUp); return d === null ? null : -d; }
     const pending = rows.filter(p => p.funil !== 'FINALIZADO' && p.funil !== 'REPROVADO' && p.dataFollowUp)
       .map(p => ({ p, dv: diasAteVencer(p.dataFollowUp) })).filter(x => x.dv !== null)
@@ -2134,7 +2177,11 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
         </div>
       </div>
       <div class="field"><label>Parceiro</label>
-        <select id="pf-f-parceiro"><option value="">Todos</option>${parceiros.map(pa => `<option value="${pa.id}" ${propFilters.parceiroId === pa.id ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}</select>
+        <div class="prop-partner-picker" style="position:relative; min-width:175px;">
+          <input id="pf-f-parceiro-search" type="text" autocomplete="off" placeholder="Pesquisar nome ou sobrenome" value="${escapeHtml(propPartnerQuery)}" oninput="filterPropPartnerOptions(this.value)" onfocus="showPropPartnerOptions()" style="width:100%;" aria-label="Pesquisar parceiro" />
+          <div id="pf-f-parceiro-options" style="display:none;position:absolute;z-index:100;background:var(--ac-card,#fff);border:1px solid var(--ac-border);border-radius:7px;box-shadow:0 8px 20px rgba(0,0,0,.12);width:100%;max-height:220px;overflow-y:auto;"></div>
+          <div id="pf-f-parceiro-selected" style="font-size:10px;margin-top:3px;color:var(--ac-text-soft);">${propFilters.parceiroId ? 'Selecionado: ' + escapeHtml(parceiroNome(propFilters.parceiroId)) : 'Todos os parceiros'}</div>
+        </div>
       </div>
       <div class="field"><label>Ano</label>
         <select id="pf-f-ano"><option value="">Todos</option>${years.map(y => `<option value="${y}" ${propFilters.ano === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
@@ -2145,16 +2192,47 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
       <button onclick="clearPropFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
     `;
     $('#pf-f-status').addEventListener('change', e => { propFilters.status = e.target.value; propPage = 1; renderPropostas(); });
-    $('#pf-f-parceiro').addEventListener('change', e => { propFilters.parceiroId = e.target.value; propPage = 1; renderPropostas(); });
+    // Pesquisa de parceiros usa a lista filtrada, sem perder o texto digitado ao redesenhar a tabela.
     $('#pf-f-ano').addEventListener('change', e => { propFilters.ano = e.target.value; propPage = 1; renderPropostas(); });
     $('#pf-f-mes').addEventListener('change', e => { propFilters.mes = e.target.value; propPage = 1; renderPropostas(); });
   }
+  function normalizePropPartnerName(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
+  }
+  window.showPropPartnerOptions = function () {
+    const panel = $('#pf-f-parceiro-options');
+    if (!panel) return;
+    const q = normalizePropPartnerName(propPartnerQuery);
+    const matches = parceiros.filter(pa => normalizePropPartnerName(pa.nome).includes(q))
+      .sort((a,b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+    panel.innerHTML = `<button type="button" onclick="selectPropPartner('')" style="display:block;width:100%;text-align:left;padding:7px 10px;">Todos os parceiros</button>` +
+      (matches.length ? matches.map(pa => `<button type="button" data-partner-id="${escapeHtml(String(pa.id))}" style="display:block;width:100%;text-align:left;padding:7px 10px;">${escapeHtml(pa.nome)}</button>`).join('') : '<div class="muted" style="padding:9px;">Nenhum parceiro encontrado.</div>');
+    panel.querySelectorAll('[data-partner-id]').forEach(btn => btn.addEventListener('click', () => selectPropPartner(btn.dataset.partnerId)));
+    panel.style.display = 'block';
+  };
+  window.filterPropPartnerOptions = function (value) {
+    propPartnerQuery = value;
+    // Digitar pesquisa as opções; a tabela só é filtrada após selecionar um parceiro.
+    showPropPartnerOptions();
+  };
+  window.selectPropPartner = function (id) {
+    propFilters.parceiroId = id;
+    propPartnerQuery = id ? parceiroNome(id) : '';
+    propPage = 1;
+    renderPropostas();
+  };
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.prop-partner-picker')) {
+      const panel = $('#pf-f-parceiro-options');
+      if (panel) panel.style.display = 'none';
+    }
+  });
   window.onPropFunilCheck = function (el) {
     if (el.checked) propFilters.funilSet.add(el.value); else propFilters.funilSet.delete(el.value);
     propPage = 1;
     renderPropostas();
   };
-  window.clearPropFilters = function () { propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' }; propPage = 1; renderPropostas(); };
+  window.clearPropFilters = function () { propPartnerQuery = ''; propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' }; propPage = 1; renderPropostas(); };
 
   function renderPropostas() {
     renderPropFilters();
@@ -2211,7 +2289,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
           <th></th></tr></thead>
         <tbody>${pageRows.map(p => {
           const membros = p.grupoId ? propostas.filter(x => x.grupoId === p.grupoId) : [p];
-          const principal = membros.find(x => x.contarNoVolume !== false) || membros[0];
+          const principal = membros.find(x => x.contarNoVolume !== false) || membros.find(x => x.status === 'ATIVO') || membros[0];
           const bancosUnicos = [...new Set(membros.map(m => m.banco).filter(Boolean))];
           const bancoCell = membros.length > 1
             ? `<span style="display:flex; align-items:center; gap:3px; flex-wrap:wrap;">${bancosUnicos.map(b => `<img src="${bancoLogo(b) || ''}" title="${escapeHtml(b)}" style="width:16px; height:16px; border-radius:50%; object-fit:cover; background:#fff; ${bancoLogo(b) ? '' : 'display:none;'}" />`).join('')}<span class="badge badge-blue" style="margin-left:2px;">${membros.length} BANCOS</span></span>`
@@ -2267,7 +2345,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
               <td>${fmtMoney(s.valorFinanciado)}</td>
               <td>${badgeStatus(s.status || 'ATIVO')}</td>
               <td>${badgeFunil(s.funil)}</td>
-              <td style="text-align:center;"><input type="checkbox" ${s.contarNoVolume !== false ? 'checked' : ''} onchange="toggleContarNoVolume('${s.id}', this.checked)" /></td>
+              <td style="text-align:center;"><input type="checkbox" style="width:14px;height:14px;min-width:14px;min-height:14px;accent-color:var(--ac-blue,#2563eb);cursor:pointer;vertical-align:middle;" ${s.contarNoVolume !== false ? 'checked' : ''} onchange="toggleContarNoVolume('${s.id}', this.checked)" /></td>
               <td>${s.id !== currentId ? `<button type="button" class="icon-btn" onclick="saveAndOpenProposal('${currentId}','${s.id}')" style="height:24px; font-size:10px;">Abrir</button>` : ''}</td>
             </tr>`).join('')}</tbody>
           </table>
@@ -2324,10 +2402,19 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
   };
   window.toggleContarNoVolume = async function (id, checked) {
     const p = propostas.find(x => x.id === id);
-    if (p) p.contarNoVolume = checked;
+    if (!p) return;
+    const membros = p.grupoId ? propostas.filter(x => x.grupoId === p.grupoId) : [p];
+    if (!checked && p.contarNoVolume !== false) {
+      // Nunca deixar uma operação sem proposta principal por um clique acidental.
+      showToast('Para trocar o banco principal, marque o banco desejado.');
+      renderGrupoPanel(id, p.grupoId);
+      return;
+    }
+    if (checked) membros.forEach(x => { x.contarNoVolume = x.id === p.id; });
     await savePropostas();
-    renderGrupoPanel(id, p ? p.grupoId : null);
+    renderGrupoPanel(id, p.grupoId);
     renderAll();
+    showToast('Banco principal do volume atualizado.');
   };
   window.unlinkFromGroup = async function (id) {
     const p = propostas.find(x => x.id === id);
@@ -2528,6 +2615,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     });
     const idx = propostas.findIndex(p => p.id === id);
     if (idx >= 0) propostas[idx] = data; else propostas.push(data);
+    // A seleção manual de 'Conta no volume' prevalece ao salvar.
     if (data.grupoId) autoPrincipalGrupo(data.grupoId);
     await savePropostas();
     renderAll();
@@ -2944,12 +3032,21 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
   function autoPrincipalGrupo(grupoId) {
     const membros = propostas.filter(p => p.grupoId === grupoId);
     if (!membros.length) return;
-    const aprovados = membros.filter(p => ['APROVADO','PRODUÇÃO','EFETIVADO','FINALIZADO'].includes(p.funil));
+    // Respeita a escolha explícita do usuário, sem reatribuir por prioridade de banco.
+    // Quando não há seleção válida, prefere propostas ATIVAS e em estágio elegível.
+    const marcados = membros.filter(p => p.contarNoVolume !== false);
+    const ativos = membros.filter(p => String(p.status || 'ATIVO').toUpperCase() === 'ATIVO');
+    const elegiveis = ativos.filter(p => ['APROVADO','PRODUÇÃO','EFETIVADO','FINALIZADO'].includes(p.funil));
     const prioridade = ['ITAÚ','ITAU','SANTANDER','BRADESCO','INTER'];
-    let principal = null;
-    for (const nome of prioridade) { principal = aprovados.find(p => (p.banco||'').toUpperCase() === nome); if (principal) break; }
-    if (!principal && aprovados.length) principal = aprovados[0];
-    membros.forEach(p => p.contarNoVolume = principal ? p.id === principal.id : false);
+    const porPrioridade = lista => [...lista].sort((a,b) => {
+      const ai = prioridade.indexOf(String(a.banco || '').toUpperCase());
+      const bi = prioridade.indexOf(String(b.banco || '').toUpperCase());
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    })[0];
+    const principal = marcados.length === 1 ? marcados[0] :
+      (marcados.find(p => String(p.status || 'ATIVO').toUpperCase() === 'ATIVO') ||
+       porPrioridade(elegiveis) || porPrioridade(ativos) || porPrioridade(membros));
+    membros.forEach(p => { p.contarNoVolume = !!principal && p.id === principal.id; });
   }
 
   window.createSolicitacaoPropostas = async function(id) {

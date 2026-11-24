@@ -1437,10 +1437,11 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
 
   let propPage = 1;
   let propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' };
+  let propPartnerQuery = '';
   let propSort = { col: 'dataCriacao', dir: -1 };
   let parSort = { col: 'nome', dir: 1 };
   let comercialFilters = { status: 'ATIVO', etapa: '', potencial: '', tipo: '', prazo: 'TODOS' };
-  let dashFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', funilSet: new Set(['APROVADO','PRODUÇÃO','EFETIVADO']), parceiroId: '' };
+  let dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
   let charts = {};
   let marketInfo = {
     atualizadoEm: new Date().toISOString().slice(0,10),
@@ -1930,8 +1931,22 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     const st = STATUS_STYLES[s] || { bg: '#EEE', fg: '#666' };
     return `<span class="badge" style="background:${st.bg}; color:${st.fg};">${escapeHtml(s || '—')}</span>`;
   }
-  function anoOf(p) { return p.dataCriacao ? p.dataCriacao.slice(0, 4) : ''; }
-  function mesOf(p) { return p.dataCriacao ? p.dataCriacao.slice(5, 7) : ''; }
+  // Datas de propostas podem chegar como ISO (AAAA-MM-DD) ou BR (DD/MM/AAAA).
+  // Centraliza a leitura para que os filtros do Dashboard usem sempre o mesmo critério.
+  function dataCriacaoPartes(p) {
+    const raw = String(p?.dataCriacao || p?.createdAt || p?.dataCadastro || '').trim();
+    if (!raw) return { ano: '', mes: '' };
+    let m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m) return { ano: m[1], mes: String(m[2]).padStart(2, '0') };
+    m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return { ano: m[3], mes: String(m[2]).padStart(2, '0') };
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? { ano: '', mes: '' } : { ano: String(d.getFullYear()), mes: String(d.getMonth()+1).padStart(2,'0') };
+  }
+  function anoOf(p) { return dataCriacaoPartes(p).ano; }
+  function mesOf(p) { return dataCriacaoPartes(p).mes; }
+  function normalizarStatusDash(p) { return String(p?.status || 'ATIVO').trim().toUpperCase(); }
+  function mesmoId(a, b) { return String(a ?? '') === String(b ?? ''); }
   function distinctYears() {
     const ys = new Set(propostas.map(anoOf).filter(Boolean));
     return Array.from(ys).sort().reverse();
@@ -1950,9 +1965,9 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     return propostas.filter(p => {
       if (dashFilters.ano && anoOf(p) !== dashFilters.ano) return false;
       if (dashFilters.mes && mesOf(p) !== dashFilters.mes) return false;
-      if (dashFilters.status && (p.status || '') !== dashFilters.status) return false;
+      if (dashFilters.status && normalizarStatusDash(p) !== dashFilters.status) return false;
       if (dashFilters.funilSet.size && !dashFilters.funilSet.has(p.funil)) return false;
-      if (dashFilters.parceiroId && p.parceiroId !== dashFilters.parceiroId) return false;
+      if (dashFilters.parceiroId && !mesmoId(p.parceiroId, dashFilters.parceiroId)) return false;
       return true;
     });
   }
@@ -1994,7 +2009,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     renderDashboard();
   };
   window.clearDashFilters = function () {
-    dashFilters = { ano: String(new Date().getFullYear()), mes: '', status: 'ATIVO', funilSet: new Set(['APROVADO','PRODUÇÃO','EFETIVADO']), parceiroId: '' };
+    dashFilters = { ano: '', mes: '', status: '', funilSet: new Set(), parceiroId: '' };
     renderDashboard();
   };
   document.addEventListener('click', (e) => {
@@ -2049,8 +2064,8 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     const chartRows = propostas.filter(p => {
       if (dashFilters.ano && anoOf(p) !== dashFilters.ano) return false;
       if (dashFilters.mes && mesOf(p) !== dashFilters.mes) return false;
-      if (dashFilters.status && (p.status || '') !== dashFilters.status) return false;
-      if (dashFilters.parceiroId && p.parceiroId !== dashFilters.parceiroId) return false;
+      if (dashFilters.status && normalizarStatusDash(p) !== dashFilters.status) return false;
+      if (dashFilters.parceiroId && !mesmoId(p.parceiroId, dashFilters.parceiroId)) return false;
       return true;
     });
     const volRows = rows.filter(p => p.contarNoVolume !== false);
@@ -2162,7 +2177,10 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
         </div>
       </div>
       <div class="field"><label>Parceiro</label>
-        <select id="pf-f-parceiro"><option value="">Todos</option>${parceiros.map(pa => `<option value="${pa.id}" ${propFilters.parceiroId === pa.id ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}</select>
+        <div class="prop-partner-picker" style="position:relative; min-width:175px;">
+          <input id="pf-f-parceiro-search" type="text" autocomplete="off" placeholder="Pesquisar nome ou sobrenome" value="${escapeHtml(propPartnerQuery)}" oninput="filterPropPartnerOptions(this.value)" onfocus="showPropPartnerOptions()" style="width:100%;" aria-label="Pesquisar parceiro" />
+          <div id="pf-f-parceiro-options" style="display:none;position:absolute;z-index:100;background:var(--ac-card,#fff);border:1px solid var(--ac-border);border-radius:7px;box-shadow:0 8px 20px rgba(0,0,0,.12);width:100%;max-height:220px;overflow-y:auto;"></div>
+        </div>
       </div>
       <div class="field"><label>Ano</label>
         <select id="pf-f-ano"><option value="">Todos</option>${years.map(y => `<option value="${y}" ${propFilters.ano === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
@@ -2173,16 +2191,47 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
       <button onclick="clearPropFilters()"><i class="ti ti-x" style="font-size:12px; margin-right:4px;"></i>Limpar</button>
     `;
     $('#pf-f-status').addEventListener('change', e => { propFilters.status = e.target.value; propPage = 1; renderPropostas(); });
-    $('#pf-f-parceiro').addEventListener('change', e => { propFilters.parceiroId = e.target.value; propPage = 1; renderPropostas(); });
+    // Pesquisa de parceiros usa a lista filtrada, sem perder o texto digitado ao redesenhar a tabela.
     $('#pf-f-ano').addEventListener('change', e => { propFilters.ano = e.target.value; propPage = 1; renderPropostas(); });
     $('#pf-f-mes').addEventListener('change', e => { propFilters.mes = e.target.value; propPage = 1; renderPropostas(); });
   }
+  function normalizePropPartnerName(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').trim();
+  }
+  window.showPropPartnerOptions = function () {
+    const panel = $('#pf-f-parceiro-options');
+    if (!panel) return;
+    const q = normalizePropPartnerName(propPartnerQuery);
+    const matches = parceiros.filter(pa => normalizePropPartnerName(pa.nome).includes(q))
+      .sort((a,b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+    panel.innerHTML = `<button type="button" onclick="selectPropPartner('')" style="display:block;width:100%;text-align:left;padding:7px 10px;">Todos os parceiros</button>` +
+      (matches.length ? matches.map(pa => `<button type="button" data-partner-id="${escapeHtml(String(pa.id))}" style="display:block;width:100%;text-align:left;padding:7px 10px;">${escapeHtml(pa.nome)}</button>`).join('') : '<div class="muted" style="padding:9px;">Nenhum parceiro encontrado.</div>');
+    panel.querySelectorAll('[data-partner-id]').forEach(btn => btn.addEventListener('click', () => selectPropPartner(btn.dataset.partnerId)));
+    panel.style.display = 'block';
+  };
+  window.filterPropPartnerOptions = function (value) {
+    propPartnerQuery = value;
+    // Digitar pesquisa as opções; a tabela só é filtrada após selecionar um parceiro.
+    showPropPartnerOptions();
+  };
+  window.selectPropPartner = function (id) {
+    propFilters.parceiroId = id;
+    propPartnerQuery = id ? parceiroNome(id) : '';
+    propPage = 1;
+    renderPropostas();
+  };
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.prop-partner-picker')) {
+      const panel = $('#pf-f-parceiro-options');
+      if (panel) panel.style.display = 'none';
+    }
+  });
   window.onPropFunilCheck = function (el) {
     if (el.checked) propFilters.funilSet.add(el.value); else propFilters.funilSet.delete(el.value);
     propPage = 1;
     renderPropostas();
   };
-  window.clearPropFilters = function () { propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' }; propPage = 1; renderPropostas(); };
+  window.clearPropFilters = function () { propPartnerQuery = ''; propFilters = { status: '', funilSet: new Set(), parceiroId: '', ano: '', mes: '' }; propPage = 1; renderPropostas(); };
 
   function renderPropostas() {
     renderPropFilters();
@@ -2239,7 +2288,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
           <th></th></tr></thead>
         <tbody>${pageRows.map(p => {
           const membros = p.grupoId ? propostas.filter(x => x.grupoId === p.grupoId) : [p];
-          const principal = membros.find(x => x.contarNoVolume !== false) || membros[0];
+          const principal = membros.find(x => x.contarNoVolume !== false) || membros.find(x => x.status === 'ATIVO') || membros[0];
           const bancosUnicos = [...new Set(membros.map(m => m.banco).filter(Boolean))];
           const bancoCell = membros.length > 1
             ? `<span style="display:flex; align-items:center; gap:3px; flex-wrap:wrap;">${bancosUnicos.map(b => `<img src="${bancoLogo(b) || ''}" title="${escapeHtml(b)}" style="width:16px; height:16px; border-radius:50%; object-fit:cover; background:#fff; ${bancoLogo(b) ? '' : 'display:none;'}" />`).join('')}<span class="badge badge-blue" style="margin-left:2px;">${membros.length} BANCOS</span></span>`
@@ -2295,7 +2344,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
               <td>${fmtMoney(s.valorFinanciado)}</td>
               <td>${badgeStatus(s.status || 'ATIVO')}</td>
               <td>${badgeFunil(s.funil)}</td>
-              <td style="text-align:center;"><input type="checkbox" ${s.contarNoVolume !== false ? 'checked' : ''} onchange="toggleContarNoVolume('${s.id}', this.checked)" /></td>
+              <td style="text-align:center;"><input type="checkbox" style="width:14px;height:14px;min-width:14px;min-height:14px;accent-color:var(--ac-blue,#2563eb);cursor:pointer;vertical-align:middle;" ${s.contarNoVolume !== false ? 'checked' : ''} onchange="toggleContarNoVolume('${s.id}', this.checked)" /></td>
               <td>${s.id !== currentId ? `<button type="button" class="icon-btn" onclick="saveAndOpenProposal('${currentId}','${s.id}')" style="height:24px; font-size:10px;">Abrir</button>` : ''}</td>
             </tr>`).join('')}</tbody>
           </table>
@@ -2352,10 +2401,19 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
   };
   window.toggleContarNoVolume = async function (id, checked) {
     const p = propostas.find(x => x.id === id);
-    if (p) p.contarNoVolume = checked;
+    if (!p) return;
+    const membros = p.grupoId ? propostas.filter(x => x.grupoId === p.grupoId) : [p];
+    if (!checked && p.contarNoVolume !== false) {
+      // Nunca deixar uma operação sem proposta principal por um clique acidental.
+      showToast('Para trocar o banco principal, marque o banco desejado.');
+      renderGrupoPanel(id, p.grupoId);
+      return;
+    }
+    if (checked) membros.forEach(x => { x.contarNoVolume = x.id === p.id; });
     await savePropostas();
-    renderGrupoPanel(id, p ? p.grupoId : null);
+    renderGrupoPanel(id, p.grupoId);
     renderAll();
+    showToast('Banco principal do volume atualizado.');
   };
   window.unlinkFromGroup = async function (id) {
     const p = propostas.find(x => x.id === id);
@@ -2445,7 +2503,11 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
             <input type="hidden" id="f-clienteId" value="${p.clienteId || ''}" />
             <div id="f-cliente-suggestions" class="autocomplete-panel"></div>
           </div>
-          <div class="field"><label>Parceiro</label><select id="f-parceiroId"><option value="">Sem parceiro</option>${parceiros.map(pa => `<option value="${pa.id}" ${pa.id === p.parceiroId ? 'selected' : ''}>${escapeHtml(pa.nome)}</option>`).join('')}</select></div>
+          <div class="field" style="position:relative;"><label>Parceiro</label>
+            <input id="f-parceiroSearch" type="text" autocomplete="off" placeholder="Pesquisar nome ou sobrenome" value="${escapeHtml(parceiros.find(pa => String(pa.id) === String(p.parceiroId))?.nome || '')}" />
+            <input type="hidden" id="f-parceiroId" value="${escapeHtml(String(p.parceiroId || ''))}" />
+            <div id="f-parceiro-suggestions" class="autocomplete-panel" style="top:100%;"></div>
+          </div>
           <div class="field"><label>Corretor</label><input id="f-corretor" value="${escapeHtml(p.corretor)}" /></div>
           <div class="field"><label>Banco</label><select id="f-banco">${bancos.map(b => `<option value="${b.nome}" ${b.nome === p.banco ? 'selected' : ''}>${b.nome}</option>`).join('')}${!bancos.length ? '<option value="">Cadastre um banco na aba Bancos</option>' : ''}</select></div>
           <div class="field"><label>Plataforma</label><select id="f-plataforma">${PLATAFORMAS.map(b => `<option value="${b}" ${b === p.plataforma ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
@@ -2508,6 +2570,32 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     ['f-valorImovel', 'f-recPropriosInput', 'f-fgts', 'f-itbi', 'f-valorIQ'].forEach(id => $('#' + id).addEventListener('input', updateCalc));
     updateCalc();
 
+    // Pesquisa de parceiro: preserva o ID até uma escolha explícita.
+    const partnerSearch = $('#f-parceiroSearch');
+    const partnerId = $('#f-parceiroId');
+    const partnerPanel = $('#f-parceiro-suggestions');
+    function renderPartnerSuggestions(query) {
+      const q = normalizePropPartnerName(query);
+      const matches = parceiros.filter(pa => normalizePropPartnerName(pa.nome).includes(q))
+        .sort((a,b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+      partnerPanel.innerHTML = '<div class="autocomplete-item" data-id="" data-nome="">Sem parceiro</div>' +
+        (matches.length ? matches.map(pa => `<div class="autocomplete-item" data-id="${escapeHtml(String(pa.id))}" data-nome="${escapeHtml(pa.nome)}">${escapeHtml(pa.nome)}</div>`).join('') : '<div class="autocomplete-item muted">Nenhum parceiro encontrado.</div>');
+      partnerPanel.classList.add('open');
+    }
+    partnerSearch.addEventListener('focus', () => renderPartnerSuggestions(''));
+    partnerSearch.addEventListener('input', () => { partnerSearch.dataset.pending = 'true'; renderPartnerSuggestions(partnerSearch.value); });
+    partnerPanel.addEventListener('mousedown', e => {
+      const item = e.target.closest('[data-id]');
+      if (!item) return;
+      e.preventDefault();
+      partnerId.value = item.dataset.id;
+      partnerSearch.value = item.dataset.nome;
+      partnerSearch.dataset.pending = 'false';
+      partnerPanel.classList.remove('open');
+    });
+    partnerSearch.addEventListener('blur', () => partnerPanel.classList.remove('open'));
+    partnerSearch.addEventListener('keydown', e => { if (e.key === 'Escape') { partnerSearch.value = parceiros.find(pa => String(pa.id) === partnerId.value)?.nome || ''; partnerSearch.dataset.pending = 'false'; partnerPanel.classList.remove('open'); } });
+
     // autocomplete de cliente
     const searchEl = $('#f-clienteSearch');
     const panelEl = $('#f-cliente-suggestions');
@@ -2541,6 +2629,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     const errEl = $('#f-error');
     if (!dataCriacao) { errEl.textContent = 'INFORME A DATA DA PROPOSTA.'; errEl.style.display = 'block'; return false; }
     if (!$('#f-clienteId').value) { errEl.textContent = 'SELECIONE UM CLIENTE DA LISTA DE SUGESTÕES.'; errEl.style.display = 'block'; return false; }
+    if ($('#f-parceiroSearch').dataset.pending === 'true') { errEl.textContent = 'SELECIONE UM PARCEIRO DA LISTA OU A OPÇÃO SEM PARCEIRO.'; errEl.style.display = 'block'; $('#f-parceiroSearch').focus(); return false; }
     errEl.style.display = 'none';
     const existing = propostas.find(p => p.id === id) || {};
     const data = Object.assign({}, existing, {
@@ -2556,6 +2645,7 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
     });
     const idx = propostas.findIndex(p => p.id === id);
     if (idx >= 0) propostas[idx] = data; else propostas.push(data);
+    // A seleção manual de 'Conta no volume' prevalece ao salvar.
     if (data.grupoId) autoPrincipalGrupo(data.grupoId);
     await savePropostas();
     renderAll();
@@ -2972,12 +3062,21 @@ body.pf-public-mode .app { border:0; border-radius:0; min-height:100vh; backgrou
   function autoPrincipalGrupo(grupoId) {
     const membros = propostas.filter(p => p.grupoId === grupoId);
     if (!membros.length) return;
-    const aprovados = membros.filter(p => ['APROVADO','PRODUÇÃO','EFETIVADO','FINALIZADO'].includes(p.funil));
+    // Respeita a escolha explícita do usuário, sem reatribuir por prioridade de banco.
+    // Quando não há seleção válida, prefere propostas ATIVAS e em estágio elegível.
+    const marcados = membros.filter(p => p.contarNoVolume !== false);
+    const ativos = membros.filter(p => String(p.status || 'ATIVO').toUpperCase() === 'ATIVO');
+    const elegiveis = ativos.filter(p => ['APROVADO','PRODUÇÃO','EFETIVADO','FINALIZADO'].includes(p.funil));
     const prioridade = ['ITAÚ','ITAU','SANTANDER','BRADESCO','INTER'];
-    let principal = null;
-    for (const nome of prioridade) { principal = aprovados.find(p => (p.banco||'').toUpperCase() === nome); if (principal) break; }
-    if (!principal && aprovados.length) principal = aprovados[0];
-    membros.forEach(p => p.contarNoVolume = principal ? p.id === principal.id : false);
+    const porPrioridade = lista => [...lista].sort((a,b) => {
+      const ai = prioridade.indexOf(String(a.banco || '').toUpperCase());
+      const bi = prioridade.indexOf(String(b.banco || '').toUpperCase());
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    })[0];
+    const principal = marcados.length === 1 ? marcados[0] :
+      (marcados.find(p => String(p.status || 'ATIVO').toUpperCase() === 'ATIVO') ||
+       porPrioridade(elegiveis) || porPrioridade(ativos) || porPrioridade(membros));
+    membros.forEach(p => { p.contarNoVolume = !!principal && p.id === principal.id; });
   }
 
   window.createSolicitacaoPropostas = async function(id) {
